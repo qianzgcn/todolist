@@ -3,6 +3,15 @@
 import React from "react";
 import { Search, ArrowUpDown } from "lucide-react";
 import { SortBy, TodoItem } from "@/types/todo";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RightTopPanelProps {
   search: string;
@@ -44,11 +53,8 @@ export function RightTopPanel({
 
         <div className="flex items-center gap-2 text-xs">
           <span className="text-slate-400">完成度</span>
-          <div className="w-24 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div
-              className="bg-blue-600 h-full rounded-full transition-all duration-300"
-              style={{ width: `${percent}%` }}
-            />
+          <div className="w-24">
+            <Progress value={percent} />
           </div>
           <span className="font-medium text-slate-600 dark:text-slate-400">{percent}%</span>
         </div>
@@ -58,13 +64,13 @@ export function RightTopPanel({
       <div className="flex items-center justify-between gap-3 pt-1">
         {/* 搜索框 */}
         <div className="relative flex-1 max-w-sm">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
+          <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+          <Input
             type="text"
             placeholder="搜索任务..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-md text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-blue-500 text-slate-800 dark:text-slate-100"
+            className="pl-8"
           />
           {search && (
             <button
@@ -77,17 +83,20 @@ export function RightTopPanel({
         </div>
 
         {/* 排序选框 */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 px-2 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
-          <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortBy)}
-            className="bg-transparent focus:outline-none cursor-pointer"
-          >
-            <option value="createdAt" className="dark:bg-slate-900">按创建时间</option>
-            <option value="dueDate" className="dark:bg-slate-900">按截止时间</option>
-            <option value="priority" className="dark:bg-slate-900">按优先级</option>
-          </select>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="排序方式" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="createdAt">按创建时间</SelectItem>
+                <SelectItem value="dueDate">按截止时间</SelectItem>
+                <SelectItem value="priority">按优先级</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>

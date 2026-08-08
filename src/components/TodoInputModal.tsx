@@ -1,9 +1,25 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { TodoItem, CategoryItem, Priority } from "@/types/todo";
 import { createTodo, updateTodo, createCategory } from "@/app/actions/todoActions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TodoInputModalProps {
   isOpen: boolean;
@@ -55,18 +71,6 @@ export function TodoInputModal({
     setErrorMsg("");
   }, [initialTodo, isOpen]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -78,19 +82,21 @@ export function TodoInputModal({
       setIsSubmitting(true);
       setErrorMsg("");
 
+      const targetCatId = categoryId && categoryId !== "NONE" ? categoryId : null;
+
       if (initialTodo) {
         await updateTodo(initialTodo.id, {
           title,
           priority,
           dueDate: dueDate || null,
-          categoryId: categoryId || null,
+          categoryId: targetCatId,
         });
       } else {
         await createTodo({
           title,
           priority,
           dueDate: dueDate || null,
-          categoryId: categoryId || null,
+          categoryId: targetCatId,
         });
       }
 
@@ -117,29 +123,14 @@ export function TodoInputModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-xl p-6 shadow-xl relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4">
-          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
-            {initialTodo ? "编辑任务" : "创建新任务"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{initialTodo ? "编辑任务" : "创建新任务"}</DialogTitle>
+        </DialogHeader>
 
         {errorMsg && (
-          <div className="mb-4 p-2.5 rounded bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 text-xs font-medium">
+          <div className="p-2.5 rounded-md bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 text-xs font-medium">
             {errorMsg}
           </div>
         )}
@@ -150,12 +141,11 @@ export function TodoInputModal({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
               任务标题 <span className="text-red-500">*</span>
             </label>
-            <input
+            <Input
               type="text"
               placeholder="例如：完成项目代码开发..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-md text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-blue-500 text-slate-800 dark:text-slate-100"
               autoFocus
             />
           </div>
@@ -168,28 +158,21 @@ export function TodoInputModal({
             <div className="grid grid-cols-3 gap-2">
               {(["HIGH", "MEDIUM", "LOW"] as Priority[]).map((p) => {
                 const labelMap: Record<Priority, string> = {
-                  HIGH: "高优",
-                  MEDIUM: "中优",
-                  LOW: "低优",
+                  HIGH: "高",
+                  MEDIUM: "中",
+                  LOW: "低",
                 };
                 const isSelected = priority === p;
                 return (
-                  <button
+                  <Button
                     type="button"
                     key={p}
+                    variant={isSelected ? (p === "HIGH" ? "destructive" : p === "MEDIUM" ? "default" : "secondary") : "outline"}
                     onClick={() => setPriority(p)}
-                    className={`py-1.5 px-3 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
-                      isSelected
-                        ? p === "HIGH"
-                          ? "bg-red-600 text-white border-red-600"
-                          : p === "MEDIUM"
-                          ? "bg-amber-600 text-white border-amber-600"
-                          : "bg-blue-600 text-white border-blue-600"
-                        : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-                    }`}
+                    className="h-8"
                   >
                     {labelMap[p]}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -202,11 +185,10 @@ export function TodoInputModal({
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                 截止日期
               </label>
-              <input
+              <Input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-md text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500"
               />
             </div>
 
@@ -227,57 +209,44 @@ export function TodoInputModal({
 
               {isAddingCategory ? (
                 <div className="flex gap-1">
-                  <input
+                  <Input
                     type="text"
                     placeholder="分类名"
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
-                    className="w-full px-2 py-1 rounded text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:outline-none"
                   />
-                  <button
-                    type="button"
-                    onClick={handleCreateCategory}
-                    className="p-1 rounded bg-blue-600 text-white cursor-pointer"
-                  >
+                  <Button size="icon" className="h-8 w-8 flex-shrink-0" onClick={handleCreateCategory}>
                     <Check className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-md text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer"
-                >
-                  <option value="">未分类</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id} className="dark:bg-slate-900">
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="未分类" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">未分类</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
           </div>
 
-          {/* Form Actions */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3.5 py-1.5 rounded-md text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>
               取消
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors cursor-pointer"
-            >
-              {isSubmitting ? "保存中..." : "确 认"}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "保存中..." : "确认"}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
