@@ -28,9 +28,9 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
   };
 
   const priorityLabelMap: Record<Priority, string> = {
-    HIGH: "高",
-    MEDIUM: "中",
-    LOW: "低",
+    HIGH: "高优",
+    MEDIUM: "中优",
+    LOW: "低优",
   };
 
   const formattedDueDate = todo.dueDate
@@ -56,15 +56,16 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
 
   return (
     <div
-      className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5 flex items-center justify-between gap-3 transition-all ${
+      className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5 flex items-start justify-between gap-3 transition-all ${
         todo.completed ? "opacity-60 bg-slate-50 dark:bg-slate-900/50" : "hover:border-slate-300 dark:hover:border-slate-700"
       } ${isDeleting ? "scale-95 opacity-0" : "scale-100"}`}
     >
-      {/* 复选框与标题 */}
-      <div className="flex items-center gap-3 flex-1 min-w-0">
+      {/* 内容区域：分为第一行（标题）和第二行（次要元数据） */}
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        {/* 复选框 */}
         <button
           onClick={() => onToggle(todo.id, todo.completed)}
-          className={`w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer ${
+          className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer ${
             todo.completed
               ? "bg-blue-600 border-blue-600 text-white"
               : "border-slate-300 dark:border-slate-600 hover:border-blue-500 bg-white dark:bg-slate-800"
@@ -73,21 +74,25 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
           {todo.completed && <Check className="w-3 h-3 stroke-[3]" />}
         </button>
 
-        <div className="flex-1 min-w-0 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-0 space-y-1.5">
+          {/* 第一行：任务名称（最显著） */}
+          <div>
             <span
-              className={`text-sm leading-tight break-all ${
+              className={`text-sm leading-snug break-all font-medium ${
                 todo.completed
-                  ? "line-through text-slate-400 dark:text-slate-500"
-                  : "text-slate-800 dark:text-slate-100 font-medium"
+                  ? "line-through text-slate-400 dark:text-slate-500 font-normal"
+                  : "text-slate-900 dark:text-slate-100"
               }`}
             >
               {todo.title}
             </span>
+          </div>
 
+          {/* 第二行：次要信息汇总（优先级、分类、截止时间、创建时间） */}
+          <div className="flex items-center gap-2 flex-wrap text-xs">
             {/* 优先级 Badge */}
             <Badge variant={priorityVariantMap[todo.priority as Priority] || "medium"}>
-              {priorityLabelMap[todo.priority as Priority] || "中"}
+              {priorityLabelMap[todo.priority as Priority] || "中优"}
             </Badge>
 
             {/* 分类 Badge */}
@@ -96,16 +101,14 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
                 {todo.category.name}
               </Badge>
             )}
-          </div>
 
-          {/* 时间信息（截止时间与次要的创建时间） */}
-          <div className="flex items-center gap-3 text-[11px] text-slate-400 dark:text-slate-500">
+            {/* 截止时间 */}
             {todo.dueDate && (
               <span
-                className={`flex items-center gap-1 ${
+                className={`flex items-center gap-1 text-[11px] ${
                   isOverdue
                     ? "text-red-600 dark:text-red-400 font-medium"
-                    : ""
+                    : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 {isOverdue ? <AlertCircle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
@@ -113,8 +116,9 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
               </span>
             )}
 
+            {/* 创建时间 */}
             {formattedCreatedDate && (
-              <span className="text-[10px] text-slate-400/80 dark:text-slate-500/80">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">
                 创建于 {formattedCreatedDate}
               </span>
             )}
@@ -123,7 +127,7 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
       </div>
 
       {/* 操作按钮 */}
-      <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity flex-shrink-0">
+      <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity flex-shrink-0 pt-0.5">
         <Button
           variant="ghost"
           size="icon"
