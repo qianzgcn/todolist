@@ -223,13 +223,21 @@ export async function resetToSeedData() {
 }
 
 export async function createCategory(name: string, color: string = "blue") {
-  if (!name || name.trim() === "") {
+  const trimmed = name ? name.trim() : "";
+  if (!trimmed) {
     throw new Error("分类名称不能为空");
+  }
+
+  const existing = await prisma.category.findUnique({
+    where: { name: trimmed },
+  });
+  if (existing) {
+    return existing;
   }
 
   const category = await prisma.category.create({
     data: {
-      name: name.trim(),
+      name: trimmed,
       color,
     },
   });

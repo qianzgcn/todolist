@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Plus, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { TodoItem, CategoryItem, Priority } from "@/types/todo";
 import { createTodo, updateTodo, createCategory } from "@/app/actions/todoActions";
 
@@ -35,20 +35,38 @@ export function TodoInputModal({
     if (initialTodo) {
       setTitle(initialTodo.title);
       setPriority(initialTodo.priority || "MEDIUM");
-      setDueDate(
-        initialTodo.dueDate
-          ? new Date(initialTodo.dueDate).toISOString().split("T")[0]
-          : ""
-      );
+
+      // 提取本地年月日格式 YYYY-MM-DD 规避 UTC 跨时区偏差
+      if (initialTodo.dueDate) {
+        const d = new Date(initialTodo.dueDate);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        setDueDate(`${year}-${month}-${day}`);
+      } else {
+        setDueDate("");
+      }
+
       setCategoryId(initialTodo.categoryId || "");
     } else {
       setTitle("");
       setPriority("MEDIUM");
       setDueDate("");
-      setCategoryId(categories.length > 0 ? categories[0].id : "");
+      setCategoryId("");
     }
     setErrorMsg("");
-  }, [initialTodo, isOpen, categories]);
+  }, [initialTodo, isOpen]);
+
+  // 监听 Esc 键关闭弹窗
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -102,7 +120,10 @@ export function TodoInputModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       <div
         className="glass-panel w-full max-w-md rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800 smooth-transition"
         onClick={(e) => e.stopPropagation()}
