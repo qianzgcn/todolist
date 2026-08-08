@@ -33,10 +33,19 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
     LOW: "低",
   };
 
-  const formattedDate = todo.dueDate
+  const formattedDueDate = todo.dueDate
     ? new Date(todo.dueDate).toLocaleDateString("zh-CN", {
         month: "numeric",
         day: "numeric",
+      })
+    : null;
+
+  const formattedCreatedDate = todo.createdAt
+    ? new Date(todo.createdAt).toLocaleDateString("zh-CN", {
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       })
     : null;
 
@@ -89,21 +98,27 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
             )}
           </div>
 
-          {/* 截止时间 */}
-          {todo.dueDate && (
-            <div className="flex items-center gap-1 text-[11px]">
+          {/* 时间信息（截止时间与次要的创建时间） */}
+          <div className="flex items-center gap-3 text-[11px] text-slate-400 dark:text-slate-500">
+            {todo.dueDate && (
               <span
                 className={`flex items-center gap-1 ${
                   isOverdue
                     ? "text-red-600 dark:text-red-400 font-medium"
-                    : "text-slate-400 dark:text-slate-500"
+                    : ""
                 }`}
               >
                 {isOverdue ? <AlertCircle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
-                <span>{isOverdue ? `已逾期 (${formattedDate})` : formattedDate}</span>
+                <span>{isOverdue ? `已逾期 (${formattedDueDate})` : `截止: ${formattedDueDate}`}</span>
               </span>
-            </div>
-          )}
+            )}
+
+            {formattedCreatedDate && (
+              <span className="text-[10px] text-slate-400/80 dark:text-slate-500/80">
+                创建于 {formattedCreatedDate}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
