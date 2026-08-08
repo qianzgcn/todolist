@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { RightTopPanel } from "@/components/RightTopPanel";
 import { TodoList } from "@/components/TodoList";
@@ -45,12 +45,12 @@ export default function HomePage() {
     }
   }, [darkMode]);
 
-  // 获取数据
+  // 获取全量数据（只在初始化或增删改重置时拉取）
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
       const [todoList, catList] = await Promise.all([
-        getTodos({ status, categoryId, search, sortBy }),
+        getTodos(),
         getCategories(),
       ]);
       setTodos(todoList as unknown as TodoItem[]);
@@ -60,11 +60,44 @@ export default function HomePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [status, categoryId, search, sortBy]);
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // 客户端高效过滤与排序，确保侧边栏与看板中的全局统计数字不受菜单切换影响
+  const filteredTodos = useMemo(() => {
+    return todos
+      .filter((todo) => {
+        // 状态过滤
+        if (status === "ACTIVE" && todo.completed) return false;
+        if (status === "COMPLETED" && !todo.completed) return false;
+
+        // 分类过滤
+        if (categoryId !== "ALL" && todo.categoryId !== categoryId) return false;
+
+        // 搜索关键字过滤
+        if (search.trim() !== "") {
+          const q = search.trim().toLowerCase();
+          if (!todo.title.toLowerCase().includes(q)) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "dueDate") {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        if (sortBy === "priority") {
+          const weight: Record<string, number> = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+          return (weight[b.priority] || 0) - (weight[a.priority] || 0);
+        }
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }, [todos, status, categoryId, search, sortBy]);
 
   // 交互处理
   const handleToggle = async (id: string, currentCompleted: boolean) => {
@@ -103,7 +136,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
-      {/* 左侧栏：导航、状态筛选与分类 */}
+      {/* 左侧栏：传入全量 todos，保证菜单上固定的全局统计数字稳定不跳变 */}
       <Sidebar
         status={status}
         setStatus={setStatus}
@@ -119,7 +152,7 @@ export default function HomePage() {
 
       {/* 右侧栏：分为上下结构 */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-white dark:bg-slate-950">
-        {/* 右侧【上部】：看板统计、搜索与排序选项 */}
+        {/* 右侧【上部】：传入全量 todos，保证顶部 Dashboard 完成度与总数稳定 */}
         <RightTopPanel
           search={search}
           setSearch={setSearch}
@@ -128,9 +161,9 @@ export default function HomePage() {
           todos={todos}
         />
 
-        {/* 右侧【下部】：任务列表 */}
+        {/* 右侧【下部】：传入筛选后的 filteredTodos 渲染实际列表 */}
         <TodoList
-          todos={todos}
+          todos={filteredTodos}
           isLoading={isLoading}
           hasFilter={hasFilter}
           onToggle={handleToggle}
