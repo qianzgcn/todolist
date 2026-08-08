@@ -1,40 +1,116 @@
 "use client";
 
-import React from "react";
-import { Search, ArrowDownUp } from "lucide-react";
-import { SortOrder, TodoItem } from "@/types/todo";
+import React, { useState, useEffect } from "react";
+import { ArrowDownUp, Plus, Tag, Flag } from "lucide-react";
+import { format } from "date-fns";
+import { SortOrder, TodoItem, CategoryItem, Priority } from "@/types/todo";
+import { createTodo } from "@/app/actions/todoActions";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RightTopPanelProps {
-  search: string;
-  setSearch: (search: string) => void;
+  categoryId: string;
+  categories: CategoryItem[];
   sortOrder: SortOrder;
   setSortOrder: (sortOrder: SortOrder) => void;
   todos: TodoItem[];
+  onRefresh: () => void;
 }
 
 export function RightTopPanel({
-  search,
-  setSearch,
+  categoryId,
+  categories,
   sortOrder,
   setSortOrder,
   todos,
+  onRefresh,
 }: RightTopPanelProps) {
-  const total = todos.length;
-  const completed = todos.filter((t) => t.completed).length;
+  // 快速创建状态
+  const [quickTitle, setQuickTitle] = useState("");
+  const [quickPriority, setQuickPriority] = useState<Priority>("MEDIUM");
+  const [quickDueDate, setQuickDueDate] = useState<string>(
+    format(new Date(), "yyyy-MM-dd")
+  );
+  const [selectedCatId, setSelectedCatId] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 当外部分类切换时，如果切换到了具体分类，自动同步极速创建的分类；如果在全部分类，默认未分类
+  useEffect(() => {
+    if (categoryId && categoryId !== "ALL") {
+      setSelectedCatId(categoryId);
+    } else {
+      setSelectedCatId("");
+    }
+  }, [categoryId]);
+
+  const handleQuickCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickTitle.trim() || isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      const targetCatId =
+        selectedCatId && selectedCatId !== "NONE" ? selectedCatId : null;
+
+      await createTodo({
+        title: quickTitle.trim(),
+        priority: quickPriority,
+        dueDate: quickDueDate || null,
+        categoryId: targetCatId,
+      });
+
+      setQuickTitle("");
+      // 重置为默认：今天，默认中优先级，当前分类
+      setQuickPriority("MEDIUM");
+      setQuickDueDate(format(new Date(), "yyyy-MM-dd"));
+      onRefresh();
+    } catch (err) {
+      console.error("快捷创建任务失败:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 统计信息与当前选中的分类强关联
+  const statsTodos = React.useMemo(() => {
+    if (!categoryId || categoryId === "ALL") return todos;
+    return todos.filter((t) => t.categoryId === categoryId);
+  }, [todos, categoryId]);
+
+  const total = statsTodos.length;
+  const completed = statsTodos.filter((t) => t.completed).length;
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
 
+  const priorityLabelMap: Record<Priority, string> = {
+    HIGH: "高",
+    MEDIUM: "中",
+    LOW: "低",
+  };
+
+  const priorityColorMap: Record<Priority, string> = {
+    HIGH: "text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/70 border-amber-300 dark:border-amber-800",
+    MEDIUM: "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/70 border-blue-300 dark:border-blue-800",
+    LOW: "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700",
+  };
+
   return (
     <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-4 space-y-3 flex-shrink-0">
-      {/* 统计指标与进度条 */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 text-xs">
+      {/* 📊 1. 最上方：与分类强关联的统计指标与 1-Click 排序 */}
+      <div className="flex items-center justify-between gap-4 text-xs pb-1 border-b border-slate-100 dark:border-slate-900">
+        <div className="flex items-center gap-4">
           <div>
             <span className="text-slate-400">总计: </span>
             <span className="font-semibold text-slate-700 dark:text-slate-200">{total}</span>
@@ -49,53 +125,114 @@ export function RightTopPanel({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-slate-400">完成度</span>
-          <div className="w-24">
-            <Progress value={percent} />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">完成度</span>
+            <div className="w-20 sm:w-24">
+              <Progress value={percent} />
+            </div>
+            <span className="font-medium text-slate-600 dark:text-slate-400">{percent}%</span>
           </div>
-          <span className="font-medium text-slate-600 dark:text-slate-400">{percent}%</span>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleSortOrder}
+            className="flex items-center gap-1.5 h-7 px-2 text-xs text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
+            title="点击直接切换创建时间顺序/逆序"
+          >
+            <ArrowDownUp
+              className={`w-3.5 h-3.5 transition-transform duration-300 ${
+                sortOrder === "desc" ? "rotate-180 text-blue-600 dark:text-blue-400" : "text-slate-400"
+              }`}
+            />
+            <span>{sortOrder === "asc" ? "最早在前" : "最新在前"}</span>
+          </Button>
         </div>
       </div>
 
-      {/* 搜索与直观轻量的 1-Click 排序按钮 */}
-      <div className="flex items-center justify-between gap-3 pt-1">
-        {/* 搜索框 */}
-        <div className="relative flex-1 max-w-sm">
-          <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+      {/* 🚀 2. 紧邻待办列表：高效率极速创建任务条 */}
+      <form onSubmit={handleQuickCreate} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-0.5">
+        <div className="relative flex-1 flex items-center">
           <Input
             type="text"
-            placeholder="搜索任务..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
+            placeholder="添加任务..."
+            value={quickTitle}
+            onChange={(e) => setQuickTitle(e.target.value)}
+            className="w-full pr-2 text-sm h-9 shadow-xs"
           />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
-            >
-              清空
-            </button>
-          )}
         </div>
 
-        {/* 优雅直接的单击切换按钮：最早在前 / 最新在前 */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={toggleSortOrder}
-          className="flex items-center gap-1.5 h-8 px-2.5 text-xs text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
-          title="点击直接切换创建时间顺序/逆序"
-        >
-          <ArrowDownUp
-            className={`w-3.5 h-3.5 transition-transform duration-300 ${
-              sortOrder === "desc" ? "rotate-180 text-blue-600 dark:text-blue-400" : "text-slate-400"
-            }`}
-          />
-          <span>{sortOrder === "asc" ? "最早在前" : "最新在前"}</span>
-        </Button>
-      </div>
+        {/* 快捷配置属性按钮组 */}
+        <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+          {/* 日期快捷配置 */}
+          <div className="w-36">
+            <DatePicker
+              value={quickDueDate}
+              onChange={(val) => setQuickDueDate(val)}
+              placeholder="今日完成"
+              className="h-9 text-xs"
+            />
+          </div>
+
+          {/* 优先级快捷切换（清晰显目的 3 色区分） */}
+          <Select
+            value={quickPriority}
+            onValueChange={(val) => setQuickPriority((val as Priority) || "MEDIUM")}
+          >
+            <SelectTrigger className={`w-20 h-9 px-2.5 text-xs font-medium ${priorityColorMap[quickPriority]}`}>
+              <SelectValue>
+                <span className="flex items-center gap-1">
+                  <Flag className="w-3 h-3 flex-shrink-0" />
+                  <span>{priorityLabelMap[quickPriority]}</span>
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="min-w-[80px] w-auto p-1">
+              <SelectItem value="HIGH">
+                <span className="text-amber-700 dark:text-amber-400 font-medium">高</span>
+              </SelectItem>
+              <SelectItem value="MEDIUM">
+                <span className="text-blue-700 dark:text-blue-400 font-medium">中</span>
+              </SelectItem>
+              <SelectItem value="LOW">
+                <span className="text-slate-600 dark:text-slate-400 font-medium">低</span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* 分类快捷选择 */}
+          <Select
+            value={selectedCatId || "NONE"}
+            onValueChange={(val) => setSelectedCatId(val ?? "")}
+          >
+            <SelectTrigger className="w-28 h-9 text-xs">
+              <SelectValue>
+                <span className="flex items-center gap-1 truncate">
+                  <Tag className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                  <span className="truncate">
+                    {categories.find((c) => c.id === selectedCatId)?.name || "其他"}
+                  </span>
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NONE">其他 (未分类)</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* 提交按钮 */}
+          <Button type="submit" disabled={isSubmitting || !quickTitle.trim()} size="sm" className="h-9 px-3">
+            <Plus className="w-4 h-4" />
+            <span>添加</span>
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

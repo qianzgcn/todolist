@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 import { TodoItem as TodoType, Priority } from "@/types/todo";
-import { Check, Calendar, AlertCircle, Edit2, Trash2 } from "lucide-react";
+import { Calendar, AlertCircle, Edit2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TodoItemProps {
   todo: TodoType;
@@ -32,17 +33,34 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
     return diffDays > 0 ? diffDays : 0;
   }, [todo.dueDate, isOverdue]);
 
-  const priorityVariantMap: Record<Priority, "high" | "medium" | "low"> = {
-    HIGH: "high",
-    MEDIUM: "medium",
-    LOW: "low",
-  };
-
-  const priorityLabelMap: Record<Priority, string> = {
-    HIGH: "高",
-    MEDIUM: "中",
-    LOW: "低",
-  };
+  const priorityBadge = React.useMemo(() => {
+    switch (todo.priority) {
+      case "HIGH":
+        return (
+          <Badge className="bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200/80 dark:border-amber-900/80 hover:bg-amber-100">
+            高
+          </Badge>
+        );
+      case "MEDIUM":
+        return (
+          <Badge className="bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/80 hover:bg-blue-100">
+            中
+          </Badge>
+        );
+      case "LOW":
+        return (
+          <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100">
+            低
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/80 hover:bg-blue-100">
+            中
+          </Badge>
+        );
+    }
+  }, [todo.priority]);
 
   const formattedDueDate = todo.dueDate
     ? new Date(todo.dueDate).toLocaleDateString("zh-CN", {
@@ -67,23 +85,22 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
 
   return (
     <div
-      className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5 flex items-start justify-between gap-3 transition-all ${
+      onDoubleClick={() => onEdit(todo)}
+      title="双击或点击编辑按钮即可修改任务"
+      className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5 flex items-start justify-between gap-3 transition-all cursor-pointer ${
         todo.completed ? "opacity-60 bg-slate-50 dark:bg-slate-900/50" : "hover:border-slate-300 dark:hover:border-slate-700"
       } ${isDeleting ? "scale-95 opacity-0" : "scale-100"}`}
     >
       {/* 内容区域：分为第一行（标题）和第二行（次要元数据） */}
       <div className="flex items-start gap-3 flex-1 min-w-0">
-        {/* 复选框 */}
-        <button
-          onClick={() => onToggle(todo.id, todo.completed)}
-          className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer ${
-            todo.completed
-              ? "bg-blue-600 border-blue-600 text-white"
-              : "border-slate-300 dark:border-slate-600 hover:border-blue-500 bg-white dark:bg-slate-800"
-          }`}
-        >
-          {todo.completed && <Check className="w-3 h-3 stroke-[3]" />}
-        </button>
+        {/* 肯定积极的绿色复选框 */}
+        <div className="mt-0.5 flex items-center justify-center flex-shrink-0">
+          <Checkbox 
+            checked={todo.completed}
+            onCheckedChange={() => onToggle(todo.id, todo.completed)}
+            className="data-checked:bg-emerald-600 data-checked:border-emerald-600 dark:data-checked:bg-emerald-600 text-white"
+          />
+        </div>
 
         <div className="flex-1 min-w-0 space-y-1.5">
           {/* 第一行：任务名称（最显著） */}
@@ -102,18 +119,16 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
           {/* 第二行：次要信息汇总（包含精准计算的已逾期天数） */}
           <div className="flex items-center gap-2 flex-wrap text-xs">
             {/* 优先级 Badge：单字 高 / 中 / 低 */}
-            <Badge variant={priorityVariantMap[todo.priority as Priority] || "medium"}>
-              {priorityLabelMap[todo.priority as Priority] || "中"}
-            </Badge>
+            {priorityBadge}
 
             {/* 分类 Badge */}
             {todo.category && (
-              <Badge variant="category">
+              <Badge variant="secondary">
                 {todo.category.name}
               </Badge>
             )}
 
-            {/* 截止时间 / 精准逾期天数 */}
+            {/* 截止时间 / 精准逾期天数 (不带杂余后缀) */}
             {todo.dueDate && (
               <span
                 className={`flex items-center gap-1 text-[11px] ${
@@ -125,7 +140,7 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
                 {isOverdue ? <AlertCircle className="w-3.5 h-3.5" /> : <Calendar className="w-3 h-3" />}
                 <span>
                   {isOverdue
-                    ? `已逾期 ${overdueDays} 天 (${formattedDueDate})`
+                    ? `已逾期 ${overdueDays} 天`
                     : `截止: ${formattedDueDate}`}
                 </span>
               </span>

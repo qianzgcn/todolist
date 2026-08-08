@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { RightTopPanel } from "@/components/RightTopPanel";
 import { TodoList } from "@/components/TodoList";
-import { TodoInputModal } from "@/components/TodoInputModal";
+import { TodoEditSheet } from "@/components/TodoEditSheet";
 import { TodoItem, CategoryItem, StatusFilter, SortOrder } from "@/types/todo";
 import {
   getTodos,
@@ -25,8 +25,8 @@ export default function HomePage() {
   const [search, setSearch] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
-  // 模态框状态
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // 右侧边栏编辑抽屉状态
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<TodoItem | null>(null);
 
   // 检测暗黑模式偏好
@@ -125,14 +125,9 @@ export default function HomePage() {
     }
   };
 
-  const handleOpenCreateModal = () => {
-    setEditingTodo(null);
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEditModal = (todo: TodoItem) => {
+  const handleOpenEditSheet = (todo: TodoItem) => {
     setEditingTodo(todo);
-    setIsModalOpen(true);
+    setIsEditSheetOpen(true);
   };
 
   const hasFilter = status !== "ALL" || categoryId !== "ALL" || search.trim() !== "";
@@ -141,6 +136,8 @@ export default function HomePage() {
     <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
       {/* 左侧栏 */}
       <Sidebar
+        search={search}
+        setSearch={setSearch}
         status={status}
         setStatus={setStatus}
         categoryId={categoryId}
@@ -149,38 +146,37 @@ export default function HomePage() {
         todos={todos}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
-        onOpenCreateModal={handleOpenCreateModal}
         onRefresh={fetchData}
       />
 
-      {/* 右侧栏 */}
+      {/* 右侧主工作区 */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-white dark:bg-slate-950">
-        {/* 右侧【上部】：只支持按创建时间 (顺序/逆序) 排序 */}
+        {/* 顶部：与分类绑定的统计指标与极速创建任务条 */}
         <RightTopPanel
-          search={search}
-          setSearch={setSearch}
+          categoryId={categoryId}
+          categories={categories}
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
           todos={todos}
+          onRefresh={fetchData}
         />
 
-        {/* 右侧【下部】：任务列表 */}
+        {/* 任务列表（支持双击卡片或点击编辑按钮弹框编辑） */}
         <TodoList
           todos={filteredTodos}
           isLoading={isLoading}
           hasFilter={hasFilter}
           onToggle={handleToggle}
-          onEdit={handleOpenEditModal}
+          onEdit={handleOpenEditSheet}
           onDelete={handleDelete}
-          onOpenCreate={handleOpenCreateModal}
         />
       </main>
 
-      {/* 弹窗 */}
-      <TodoInputModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        initialTodo={editingTodo}
+      {/* 右侧编辑抽屉 */}
+      <TodoEditSheet
+        isOpen={isEditSheetOpen}
+        onClose={() => setIsEditSheetOpen(false)}
+        todo={editingTodo}
         categories={categories}
         onSuccess={fetchData}
       />

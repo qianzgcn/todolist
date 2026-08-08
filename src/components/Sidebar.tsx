@@ -13,6 +13,8 @@ import {
   Clock,
   FolderPlus,
   Check,
+  Search,
+  X,
 } from "lucide-react";
 import { StatusFilter, CategoryItem, TodoItem } from "@/types/todo";
 import { resetToSeedData, createCategory } from "@/app/actions/todoActions";
@@ -20,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface SidebarProps {
+  search: string;
+  setSearch: (search: string) => void;
   status: StatusFilter;
   setStatus: (status: StatusFilter) => void;
   categoryId: string;
@@ -28,11 +32,12 @@ interface SidebarProps {
   todos: TodoItem[];
   darkMode: boolean;
   setDarkMode: (value: boolean | ((prev: boolean) => boolean)) => void;
-  onOpenCreateModal: () => void;
   onRefresh: () => void;
 }
 
 export function Sidebar({
+  search,
+  setSearch,
   status,
   setStatus,
   categoryId,
@@ -41,7 +46,6 @@ export function Sidebar({
   todos,
   darkMode,
   setDarkMode,
-  onOpenCreateModal,
   onRefresh,
 }: SidebarProps) {
   const [isResetting, setIsResetting] = useState(false);
@@ -90,10 +94,25 @@ export function Sidebar({
           </span>
         </div>
 
-        <Button onClick={onOpenCreateModal} className="w-full">
-          <Plus className="w-4 h-4" />
-          <span>添加任务</span>
-        </Button>
+        {/* 侧边栏搜索框 */}
+        <div className="relative w-full">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+          <Input
+            type="text"
+            placeholder="搜索任务..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8 pr-7 text-xs h-8 bg-white dark:bg-slate-950"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 视图与分类 */}
@@ -104,50 +123,53 @@ export function Sidebar({
             视图
           </p>
 
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setStatus("ALL")}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+            className={`w-full justify-start px-2.5 py-1.5 h-auto text-xs transition-colors cursor-pointer ${
               status === "ALL"
-                ? "bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
+                ? "bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium hover:bg-blue-100/90 dark:hover:bg-blue-900/60"
+                : "text-slate-600 dark:text-slate-400"
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 flex-1">
               <Inbox className="w-4 h-4" />
               <span>全部</span>
             </span>
             <span className="text-[11px] text-slate-400">{totalCount}</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setStatus("ACTIVE")}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+            className={`w-full justify-start px-2.5 py-1.5 h-auto text-xs transition-colors cursor-pointer ${
               status === "ACTIVE"
-                ? "bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
+                ? "bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium hover:bg-blue-100/90 dark:hover:bg-blue-900/60"
+                : "text-slate-600 dark:text-slate-400"
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 flex-1">
               <Clock className="w-4 h-4" />
               <span>待办</span>
             </span>
             <span className="text-[11px] text-slate-400">{activeCount}</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setStatus("COMPLETED")}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+            className={`w-full justify-start px-2.5 py-1.5 h-auto text-xs transition-colors cursor-pointer ${
               status === "COMPLETED"
-                ? "bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
+                ? "bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium hover:bg-blue-100/90 dark:hover:bg-blue-900/60"
+                : "text-slate-600 dark:text-slate-400"
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 flex-1">
               <CheckCircle2 className="w-4 h-4" />
               <span>已完成</span>
             </span>
             <span className="text-[11px] text-slate-400">{completedCount}</span>
-          </button>
+          </Button>
         </div>
 
         {/* 分类 */}
@@ -156,13 +178,15 @@ export function Sidebar({
             <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               分类
             </p>
-            <button
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => setIsAddingCat(!isAddingCat)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer h-6 w-6"
               title="新建分类"
             >
               <FolderPlus className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
 
           {isAddingCat && (
@@ -181,38 +205,40 @@ export function Sidebar({
             </div>
           )}
 
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setCategoryId("ALL")}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+            className={`w-full justify-start px-2.5 py-1.5 h-auto text-xs transition-colors cursor-pointer ${
               categoryId === "ALL"
-                ? "bg-slate-200/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 font-medium"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
+                ? "bg-slate-200/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 font-medium hover:bg-slate-300/80 dark:hover:bg-slate-700/80"
+                : "text-slate-600 dark:text-slate-400"
             }`}
           >
             <span className="flex items-center gap-2">
               <Folder className="w-4 h-4 text-slate-400" />
               <span>全部分类</span>
             </span>
-          </button>
+          </Button>
 
           {categories.map((cat) => (
-            <button
+            <Button
+              variant="ghost"
               key={cat.id}
               onClick={() => setCategoryId(cat.id)}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+              className={`w-full justify-start px-2.5 py-1.5 h-auto text-xs transition-colors cursor-pointer ${
                 categoryId === cat.id
-                  ? "bg-slate-200/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 font-medium"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
+                  ? "bg-slate-200/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 font-medium hover:bg-slate-300/80 dark:hover:bg-slate-700/80"
+                  : "text-slate-600 dark:text-slate-400"
               }`}
             >
-              <span className="flex items-center gap-2 truncate">
+              <span className="flex items-center gap-2 flex-1 truncate">
                 <Folder className="w-4 h-4 text-blue-500 flex-shrink-0" />
                 <span className="truncate">{cat.name}</span>
               </span>
               <span className="text-[11px] text-slate-400">
                 {todos.filter((t) => t.categoryId === cat.id).length}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>

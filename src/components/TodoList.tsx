@@ -12,7 +12,6 @@ interface TodoListProps {
   onToggle: (id: string, currentCompleted: boolean) => void;
   onEdit: (todo: TodoType) => void;
   onDelete: (id: string) => void;
-  onOpenCreate: () => void;
 }
 
 export function TodoList({
@@ -22,7 +21,6 @@ export function TodoList({
   onToggle,
   onEdit,
   onDelete,
-  onOpenCreate,
 }: TodoListProps) {
   if (isLoading) {
     return (
@@ -42,16 +40,8 @@ export function TodoList({
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
         <Inbox className="w-10 h-10 mb-2 stroke-[1.5] text-slate-300 dark:text-slate-600" />
         <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-          {hasFilter ? "没有符合条件的任务" : "暂无任务"}
+          {hasFilter ? "没有符合条件的任务" : "暂无任务 (在上方的输入框添加即可)"}
         </p>
-        {!hasFilter && (
-          <button
-            onClick={onOpenCreate}
-            className="mt-3 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
-          >
-            添加新任务
-          </button>
-        )}
       </div>
     );
   }
