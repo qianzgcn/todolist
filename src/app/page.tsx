@@ -11,7 +11,6 @@ import {
   getCategories,
   toggleTodo,
   deleteTodo,
-  clearCompletedTodos,
 } from "@/app/actions/todoActions";
 
 export default function HomePage() {
@@ -90,17 +89,6 @@ export default function HomePage() {
     }
   };
 
-  const handleClearCompleted = async () => {
-    if (confirm("确定要删除所有已完成的任务吗？")) {
-      try {
-        await clearCompletedTodos();
-        fetchData();
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
   const handleOpenCreateModal = () => {
     setEditingTodo(null);
     setIsModalOpen(true);
@@ -111,7 +99,6 @@ export default function HomePage() {
     setIsModalOpen(true);
   };
 
-  const completedCount = todos.filter((t) => t.completed).length;
   const hasFilter = status !== "ALL" || categoryId !== "ALL" || search.trim() !== "";
 
   return (
@@ -139,8 +126,6 @@ export default function HomePage() {
           sortBy={sortBy}
           setSortBy={setSortBy}
           todos={todos}
-          completedCount={completedCount}
-          onClearCompleted={handleClearCompleted}
         />
 
         {/* 右侧【下部】：任务列表 */}

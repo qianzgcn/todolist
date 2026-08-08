@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, Trash2, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown } from "lucide-react";
 import { SortBy, TodoItem } from "@/types/todo";
 
 interface RightTopPanelProps {
@@ -10,8 +10,6 @@ interface RightTopPanelProps {
   sortBy: SortBy;
   setSortBy: (sortBy: SortBy) => void;
   todos: TodoItem[];
-  completedCount: number;
-  onClearCompleted: () => void;
 }
 
 export function RightTopPanel({
@@ -20,8 +18,6 @@ export function RightTopPanel({
   sortBy,
   setSortBy,
   todos,
-  completedCount,
-  onClearCompleted,
 }: RightTopPanelProps) {
   const total = todos.length;
   const completed = todos.filter((t) => t.completed).length;
@@ -80,7 +76,7 @@ export function RightTopPanel({
           )}
         </div>
 
-        {/* 排序与批量清除 */}
+        {/* 排序 */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 px-2 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
             <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
@@ -94,16 +90,6 @@ export function RightTopPanel({
               <option value="priority" className="dark:bg-slate-900">按优先级</option>
             </select>
           </div>
-
-          {completedCount > 0 && (
-            <button
-              onClick={onClearCompleted}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-md text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>清理已完成</span>
-            </button>
-          )}
         </div>
       </div>
     </div>
