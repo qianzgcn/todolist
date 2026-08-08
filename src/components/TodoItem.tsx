@@ -21,6 +21,17 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
       ? new Date(todo.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
       : false;
 
+  const overdueDays = React.useMemo(() => {
+    if (!todo.dueDate || !isOverdue) return 0;
+    const due = new Date(todo.dueDate);
+    due.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffTime = today.getTime() - due.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  }, [todo.dueDate, isOverdue]);
+
   const priorityVariantMap: Record<Priority, "high" | "medium" | "low"> = {
     HIGH: "high",
     MEDIUM: "medium",
@@ -88,7 +99,7 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
             </span>
           </div>
 
-          {/* 第二行：次要信息汇总（优先级仅单字“高/中/低”、分类、截止时间、创建时间） */}
+          {/* 第二行：次要信息汇总（包含精准计算的已逾期天数） */}
           <div className="flex items-center gap-2 flex-wrap text-xs">
             {/* 优先级 Badge：单字 高 / 中 / 低 */}
             <Badge variant={priorityVariantMap[todo.priority as Priority] || "medium"}>
@@ -102,17 +113,21 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
               </Badge>
             )}
 
-            {/* 截止时间 */}
+            {/* 截止时间 / 精准逾期天数 */}
             {todo.dueDate && (
               <span
                 className={`flex items-center gap-1 text-[11px] ${
                   isOverdue
-                    ? "text-red-600 dark:text-red-400 font-medium"
+                    ? "text-red-600 dark:text-red-400 font-semibold"
                     : "text-slate-500 dark:text-slate-400"
                 }`}
               >
-                {isOverdue ? <AlertCircle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
-                <span>{isOverdue ? `已逾期 (${formattedDueDate})` : `截止: ${formattedDueDate}`}</span>
+                {isOverdue ? <AlertCircle className="w-3.5 h-3.5" /> : <Calendar className="w-3 h-3" />}
+                <span>
+                  {isOverdue
+                    ? `已逾期 ${overdueDays} 天 (${formattedDueDate})`
+                    : `截止: ${formattedDueDate}`}
+                </span>
               </span>
             )}
 

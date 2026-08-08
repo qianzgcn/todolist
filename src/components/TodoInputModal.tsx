@@ -6,6 +6,7 @@ import { TodoItem, CategoryItem, Priority } from "@/types/todo";
 import { createTodo, updateTodo, createCategory } from "@/app/actions/todoActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -178,17 +179,16 @@ export function TodoInputModal({
             </div>
           </div>
 
-          {/* Due Date & Category */}
+          {/* Due Date (shadcn DatePicker) & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Due Date */}
+            {/* Due Date with shadcn DatePicker */}
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                 截止日期
               </label>
-              <Input
-                type="date"
+              <DatePicker
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={(val) => setDueDate(val)}
               />
             </div>
 
