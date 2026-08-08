@@ -1,32 +1,78 @@
 "use client";
 
 import * as React from "react";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "@/lib/utils";
 
-const Popover = PopoverPrimitive.Root;
+interface PopoverProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children?: React.ReactNode;
+}
 
-const PopoverTrigger = PopoverPrimitive.Trigger;
+const PopoverContext = React.createContext<{
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}>({ open: false, setOpen: () => {} });
 
-const PopoverAnchor = PopoverPrimitive.Anchor;
+const Popover: React.FC<PopoverProps> = ({ open: externalOpen, onOpenChange, children }) => {
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
 
-const PopoverContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
+  const setOpen = React.useCallback(
+    (newOpen: boolean) => {
+      if (!isControlled) setInternalOpen(newOpen);
+      if (onOpenChange) onOpenChange(newOpen);
+    },
+    [isControlled, onOpenChange]
+  );
+
+  return (
+    <PopoverContext.Provider value={{ open, setOpen }}>
+      <div className="relative inline-block w-full">{children}</div>
+    </PopoverContext.Provider>
+  );
+};
+
+const PopoverTrigger: React.FC<{ asChild?: boolean; children: React.ReactNode }> = ({ children }) => {
+  const { open, setOpen } = React.useContext(PopoverContext);
+  return (
+    <div onClick={() => setOpen(!open)} className="w-full">
+      {children}
+    </div>
+  );
+};
+
+const PopoverContent: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, children, ...props }) => {
+  const { open, setOpen } = React.useContext(PopoverContext);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open, setOpen]);
+
+  if (!open) return null;
+
+  return (
+    <div
       ref={ref}
-      align={align}
-      sideOffset={sideOffset}
       className={cn(
-        "z-50 w-72 rounded-md border border-slate-200 bg-white p-4 text-slate-950 shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-50",
+        "absolute left-0 top-full mt-1.5 z-50 w-64 rounded-md border border-slate-200 bg-white p-3 text-slate-950 shadow-md animate-in fade-in duration-150 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-50",
         className
       )}
       {...props}
-    />
-  </PopoverPrimitive.Portal>
-));
-PopoverContent.displayName = PopoverPrimitive.Content.displayName;
+    >
+      {children}
+    </div>
+  );
+};
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };
+export { Popover, PopoverTrigger, PopoverContent };

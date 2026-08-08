@@ -64,7 +64,7 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-64 p-3" align="start">
+        <PopoverContent className="w-64 p-3">
           <div className="space-y-3">
             <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               快速选择截止时间
