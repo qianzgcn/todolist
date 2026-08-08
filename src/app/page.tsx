@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { RightTopPanel } from "@/components/RightTopPanel";
 import { TodoList } from "@/components/TodoList";
 import { TodoInputModal } from "@/components/TodoInputModal";
-import { TodoItem, CategoryItem, StatusFilter, SortBy } from "@/types/todo";
+import { TodoItem, CategoryItem, StatusFilter, SortOrder } from "@/types/todo";
 import {
   getTodos,
   getCategories,
@@ -19,11 +19,11 @@ export default function HomePage() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 筛选与排序状态
+  // 筛选与排序状态：默认 sortOrder 为 "asc" (最早创建在最前面/顺序)
   const [status, setStatus] = useState<StatusFilter>("ALL");
   const [categoryId, setCategoryId] = useState<string>("ALL");
   const [search, setSearch] = useState<string>("");
-  const [sortBy, setSortBy] = useState<SortBy>("createdAt");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   // 模态框状态
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,7 +45,7 @@ export default function HomePage() {
     }
   }, [darkMode]);
 
-  // 获取全量数据（只在初始化或增删改重置时拉取）
+  // 获取全量数据
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -66,7 +66,10 @@ export default function HomePage() {
     fetchData();
   }, [fetchData]);
 
-  // 客户端高效过滤与排序，确保侧边栏与看板中的全局统计数字不受菜单切换影响
+  // 核心排序与过滤逻辑：
+  // 1. 根据状态、分类、搜索条件过滤
+  // 2. 已完成的任务始终排在未完成任务的后面 (Completed tasks always at bottom)
+  // 3. 默认按照创建时间 (createdAt) 排序（"asc" 最早在前，"desc" 最新在前）
   const filteredTodos = useMemo(() => {
     return todos
       .filter((todo) => {
@@ -86,18 +89,18 @@ export default function HomePage() {
         return true;
       })
       .sort((a, b) => {
-        if (sortBy === "dueDate") {
-          if (!a.dueDate) return 1;
-          if (!b.dueDate) return -1;
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        // 规则 1：已完成的任务始终沉底排在后面
+        if (a.completed !== b.completed) {
+          return a.completed ? 1 : -1;
         }
-        if (sortBy === "priority") {
-          const weight: Record<string, number> = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-          return (weight[b.priority] || 0) - (weight[a.priority] || 0);
-        }
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
+        // 规则 2：根据创建时间顺序 (asc 最早在前) 或逆序 (desc 最新在前) 排序
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+
+        return sortOrder === "asc" ? timeA - timeB : timeB - timeA;
       });
-  }, [todos, status, categoryId, search, sortBy]);
+  }, [todos, status, categoryId, search, sortOrder]);
 
   // 交互处理
   const handleToggle = async (id: string, currentCompleted: boolean) => {
@@ -136,7 +139,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
-      {/* 左侧栏：传入全量 todos，保证菜单上固定的全局统计数字稳定不跳变 */}
+      {/* 左侧栏 */}
       <Sidebar
         status={status}
         setStatus={setStatus}
@@ -150,18 +153,18 @@ export default function HomePage() {
         onRefresh={fetchData}
       />
 
-      {/* 右侧栏：分为上下结构 */}
+      {/* 右侧栏 */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-white dark:bg-slate-950">
-        {/* 右侧【上部】：传入全量 todos，保证顶部 Dashboard 完成度与总数稳定 */}
+        {/* 右侧【上部】：只支持按创建时间 (顺序/逆序) 排序 */}
         <RightTopPanel
           search={search}
           setSearch={setSearch}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
           todos={todos}
         />
 
-        {/* 右侧【下部】：传入筛选后的 filteredTodos 渲染实际列表 */}
+        {/* 右侧【下部】：任务列表 */}
         <TodoList
           todos={filteredTodos}
           isLoading={isLoading}

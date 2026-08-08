@@ -28,9 +28,9 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
   };
 
   const priorityLabelMap: Record<Priority, string> = {
-    HIGH: "高优",
-    MEDIUM: "中优",
-    LOW: "低优",
+    HIGH: "高",
+    MEDIUM: "中",
+    LOW: "低",
   };
 
   const formattedDueDate = todo.dueDate
@@ -88,11 +88,11 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
             </span>
           </div>
 
-          {/* 第二行：次要信息汇总（优先级、分类、截止时间、创建时间） */}
+          {/* 第二行：次要信息汇总（优先级仅单字“高/中/低”、分类、截止时间、创建时间） */}
           <div className="flex items-center gap-2 flex-wrap text-xs">
-            {/* 优先级 Badge */}
+            {/* 优先级 Badge：单字 高 / 中 / 低 */}
             <Badge variant={priorityVariantMap[todo.priority as Priority] || "medium"}>
-              {priorityLabelMap[todo.priority as Priority] || "中优"}
+              {priorityLabelMap[todo.priority as Priority] || "中"}
             </Badge>
 
             {/* 分类 Badge */}

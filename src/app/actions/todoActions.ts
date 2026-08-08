@@ -1,16 +1,16 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { CreateTodoInput, UpdateTodoInput, StatusFilter, SortBy, Priority } from "@/types/todo";
+import { CreateTodoInput, UpdateTodoInput, StatusFilter, SortOrder, Priority } from "@/types/todo";
 import { revalidatePath } from "next/cache";
 
 export async function getTodos(params?: {
   status?: StatusFilter;
   categoryId?: string;
   search?: string;
-  sortBy?: SortBy;
+  sortOrder?: SortOrder;
 }) {
-  const { status = "ALL", categoryId, search, sortBy = "createdAt" } = params || {};
+  const { status = "ALL", categoryId, search, sortOrder = "asc" } = params || {};
 
   const where: any = {};
 
@@ -30,13 +30,7 @@ export async function getTodos(params?: {
     };
   }
 
-  let orderBy: any = [{ createdAt: "desc" }];
-
-  if (sortBy === "dueDate") {
-    orderBy = [{ dueDate: "asc" }, { createdAt: "desc" }];
-  } else if (sortBy === "priority") {
-    orderBy = [{ createdAt: "desc" }];
-  }
+  let orderBy: any = [{ completed: "asc" }, { createdAt: sortOrder }];
 
   let todos = await prisma.todo.findMany({
     where,
@@ -45,15 +39,6 @@ export async function getTodos(params?: {
     },
     orderBy,
   });
-
-  if (sortBy === "priority") {
-    const priorityWeight: Record<Priority, number> = {
-      HIGH: 3,
-      MEDIUM: 2,
-      LOW: 1,
-    };
-    todos = todos.sort((a, b) => priorityWeight[b.priority as Priority] - priorityWeight[a.priority as Priority]);
-  }
 
   return todos;
 }

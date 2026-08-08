@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Search, ArrowUpDown } from "lucide-react";
-import { SortBy, TodoItem } from "@/types/todo";
+import { SortOrder, TodoItem } from "@/types/todo";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -16,16 +16,16 @@ import {
 interface RightTopPanelProps {
   search: string;
   setSearch: (search: string) => void;
-  sortBy: SortBy;
-  setSortBy: (sortBy: SortBy) => void;
+  sortOrder: SortOrder;
+  setSortOrder: (sortOrder: SortOrder) => void;
   todos: TodoItem[];
 }
 
 export function RightTopPanel({
   search,
   setSearch,
-  sortBy,
-  setSortBy,
+  sortOrder,
+  setSortOrder,
   todos,
 }: RightTopPanelProps) {
   const total = todos.length;
@@ -82,18 +82,17 @@ export function RightTopPanel({
           )}
         </div>
 
-        {/* 排序选框 */}
+        {/* 排序选项：按创建时间 (顺序/逆序) */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="排序方式" />
+            <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
+              <SelectTrigger className="w-[155px]">
+                <SelectValue placeholder="创建时间排序" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="createdAt">按创建时间</SelectItem>
-                <SelectItem value="dueDate">按截止时间</SelectItem>
-                <SelectItem value="priority">按优先级</SelectItem>
+                <SelectItem value="asc">最早创建在前 (顺序)</SelectItem>
+                <SelectItem value="desc">最新创建在前 (逆序)</SelectItem>
               </SelectContent>
             </Select>
           </div>
