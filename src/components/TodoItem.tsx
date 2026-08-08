@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { TodoItem as TodoType, Priority } from "@/types/todo";
 import { Check, Calendar, AlertCircle, Edit2, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface TodoItemProps {
   todo: TodoType;
@@ -19,10 +21,16 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
       ? new Date(todo.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
       : false;
 
-  const priorityStyles: Record<Priority, { label: string; badge: string }> = {
-    HIGH: { label: "高", badge: "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900" },
-    MEDIUM: { label: "中", badge: "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900" },
-    LOW: { label: "低", badge: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700" },
+  const priorityVariantMap: Record<Priority, "high" | "medium" | "low"> = {
+    HIGH: "high",
+    MEDIUM: "medium",
+    LOW: "low",
+  };
+
+  const priorityLabelMap: Record<Priority, string> = {
+    HIGH: "高",
+    MEDIUM: "中",
+    LOW: "低",
   };
 
   const formattedDate = todo.dueDate
@@ -47,7 +55,7 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <button
           onClick={() => onToggle(todo.id, todo.completed)}
-          className={`w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${
+          className={`w-4 h-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer ${
             todo.completed
               ? "bg-blue-600 border-blue-600 text-white"
               : "border-slate-300 dark:border-slate-600 hover:border-blue-500 bg-white dark:bg-slate-800"
@@ -68,20 +76,16 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
               {todo.title}
             </span>
 
-            {/* 优先级 */}
-            <span
-              className={`text-[10px] font-medium px-1.5 py-0.2 rounded border ${
-                priorityStyles[todo.priority as Priority]?.badge || priorityStyles.MEDIUM.badge
-              }`}
-            >
-              {priorityStyles[todo.priority as Priority]?.label || "中"}
-            </span>
+            {/* 优先级 Badge */}
+            <Badge variant={priorityVariantMap[todo.priority as Priority] || "medium"}>
+              {priorityLabelMap[todo.priority as Priority] || "中"}
+            </Badge>
 
-            {/* 分类 */}
+            {/* 分类 Badge */}
             {todo.category && (
-              <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              <Badge variant="category">
                 {todo.category.name}
-              </span>
+              </Badge>
             )}
           </div>
 
@@ -105,20 +109,24 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
 
       {/* 操作按钮 */}
       <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity flex-shrink-0">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
           onClick={() => onEdit(todo)}
-          className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
           title="编辑"
         >
-          <Edit2 className="w-3.5 h-3.5" />
-        </button>
-        <button
+          <Edit2 className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 hover:bg-red-50 dark:hover:bg-red-950/40"
           onClick={handleDelete}
-          className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
           title="删除"
         >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+          <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-600" />
+        </Button>
       </div>
     </div>
   );

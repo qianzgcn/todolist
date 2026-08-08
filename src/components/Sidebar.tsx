@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { StatusFilter, CategoryItem, TodoItem } from "@/types/todo";
 import { resetToSeedData, createCategory } from "@/app/actions/todoActions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface SidebarProps {
   status: StatusFilter;
@@ -73,7 +75,6 @@ export function Sidebar({
     }
   };
 
-  // 统计数
   const totalCount = todos.length;
   const activeCount = todos.filter((t) => !t.completed).length;
   const completedCount = todos.filter((t) => t.completed).length;
@@ -95,13 +96,10 @@ export function Sidebar({
           </div>
         </div>
 
-        <button
-          onClick={onOpenCreateModal}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
-        >
+        <Button onClick={onOpenCreateModal} className="w-full">
           <Plus className="w-4 h-4" />
           <span>添加任务</span>
-        </button>
+        </Button>
       </div>
 
       {/* 状态与分类菜单 */}
@@ -114,7 +112,7 @@ export function Sidebar({
 
           <button
             onClick={() => setStatus("ALL")}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
               status === "ALL"
                 ? "bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
@@ -129,7 +127,7 @@ export function Sidebar({
 
           <button
             onClick={() => setStatus("ACTIVE")}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
               status === "ACTIVE"
                 ? "bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
@@ -144,7 +142,7 @@ export function Sidebar({
 
           <button
             onClick={() => setStatus("COMPLETED")}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
               status === "COMPLETED"
                 ? "bg-blue-100/70 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
@@ -166,7 +164,7 @@ export function Sidebar({
             </p>
             <button
               onClick={() => setIsAddingCat(!isAddingCat)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               title="新建分类"
             >
               <FolderPlus className="w-3.5 h-3.5" />
@@ -176,27 +174,23 @@ export function Sidebar({
           {/* 新建分类输入 */}
           {isAddingCat && (
             <div className="flex items-center gap-1 px-2 py-1">
-              <input
+              <Input
                 type="text"
                 placeholder="分类名称..."
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
-                className="w-full px-2 py-1 rounded text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:outline-none"
                 autoFocus
               />
-              <button
-                onClick={handleAddCategory}
-                className="p-1 rounded bg-blue-600 text-white"
-              >
+              <Button size="icon" className="h-8 w-8 flex-shrink-0" onClick={handleAddCategory}>
                 <Check className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
           )}
 
           <button
             onClick={() => setCategoryId("ALL")}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
               categoryId === "ALL"
                 ? "bg-slate-200/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 font-medium"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
@@ -212,7 +206,7 @@ export function Sidebar({
             <button
               key={cat.id}
               onClick={() => setCategoryId(cat.id)}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
                 categoryId === cat.id
                   ? "bg-slate-200/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 font-medium"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
@@ -232,23 +226,27 @@ export function Sidebar({
 
       {/* 底部控制 */}
       <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setDarkMode((prev) => !prev)}
-          className="flex items-center gap-1.5 p-1.5 rounded hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors"
+          className="flex items-center gap-1.5 px-2"
         >
           {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
           <span>{darkMode ? "浅色模式" : "暗黑模式"}</span>
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleResetSeed}
           disabled={isResetting}
-          className="flex items-center gap-1 p-1.5 rounded hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors"
+          className="flex items-center gap-1 px-2"
           title="重置示例数据"
         >
           <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? "animate-spin" : ""}`} />
           <span>重置数据</span>
-        </button>
+        </Button>
       </div>
     </aside>
   );
