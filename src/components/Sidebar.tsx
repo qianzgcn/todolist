@@ -90,7 +90,7 @@ export function Sidebar({
           <div className="flex items-center gap-2">
             <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <span className="font-semibold text-slate-800 dark:text-slate-100 text-base">
-              我的任务
+              todoList
             </span>
           </div>
         </div>

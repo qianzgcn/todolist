@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TodoCraft - 优雅极简个人任务清单",
-  description: "基于 Next.js 15, Prisma 与 SQLite 构建的高效个人 Web 端 ToDoList 应用",
+  title: "todoList",
+  description: "基于 Next.js, Prisma 7 与 SQLite 构建的个人任务清单应用",
 };
 
 export default function RootLayout({
