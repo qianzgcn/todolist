@@ -1,17 +1,11 @@
 "use client";
 
 import React from "react";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowDownUp } from "lucide-react";
 import { SortOrder, TodoItem } from "@/types/todo";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 interface RightTopPanelProps {
   search: string;
@@ -31,6 +25,10 @@ export function RightTopPanel({
   const total = todos.length;
   const completed = todos.filter((t) => t.completed).length;
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+  };
 
   return (
     <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-4 space-y-3 flex-shrink-0">
@@ -60,7 +58,7 @@ export function RightTopPanel({
         </div>
       </div>
 
-      {/* 搜索与排序 */}
+      {/* 搜索与直观轻量的 1-Click 排序按钮 */}
       <div className="flex items-center justify-between gap-3 pt-1">
         {/* 搜索框 */}
         <div className="relative flex-1 max-w-sm">
@@ -82,21 +80,21 @@ export function RightTopPanel({
           )}
         </div>
 
-        {/* 排序选项：按创建时间 (顺序/逆序) */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-            <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
-              <SelectTrigger className="w-[155px]">
-                <SelectValue placeholder="创建时间排序" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">最早创建在前 (顺序)</SelectItem>
-                <SelectItem value="desc">最新创建在前 (逆序)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        {/* 优雅直接的单击切换按钮：最早在前 / 最新在前 */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleSortOrder}
+          className="flex items-center gap-1.5 h-8 px-2.5 text-xs text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
+          title="点击直接切换创建时间顺序/逆序"
+        >
+          <ArrowDownUp
+            className={`w-3.5 h-3.5 transition-transform duration-300 ${
+              sortOrder === "desc" ? "rotate-180 text-blue-600 dark:text-blue-400" : "text-slate-400"
+            }`}
+          />
+          <span>{sortOrder === "asc" ? "最早在前" : "最新在前"}</span>
+        </Button>
       </div>
     </div>
   );
