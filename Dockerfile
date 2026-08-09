@@ -9,6 +9,10 @@ RUN sed -i 's#https\?://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /et
 FROM base AS deps
 # better-sqlite3 等原生模块需要编译工具链
 RUN apk add --no-cache python3 make g++
+# 国内加速：npm 包源 + node-gyp 编译时下载 Node 头文件的镜像源
+ENV NODEJS_ORG_MIRROR=https://cdn.npmmirror.com/binaries/node
+ENV npm_config_build_from_source=true
+RUN npm config set registry https://registry.npmmirror.com/
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 RUN npm ci
