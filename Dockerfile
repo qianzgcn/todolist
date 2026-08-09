@@ -1,10 +1,14 @@
 # 1. 基础环境
 FROM node:20-alpine AS base
 WORKDIR /app
-RUN apk add --no-cache openssl sqlite
+# 使用阿里云镜像源加速 apk 安装（国内网络环境下官方源极慢）
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /etc/apk/repositories \
+    && apk add --no-cache openssl sqlite
 
 # 2. 依赖安装
 FROM base AS deps
+# better-sqlite3 等原生模块需要编译工具链
+RUN apk add --no-cache python3 make g++
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 RUN npm ci
