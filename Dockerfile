@@ -1,10 +1,14 @@
 # 1. 基础环境
 FROM node:20-alpine AS base
 WORKDIR /app
-RUN apk add --no-cache openssl
+# 使用阿里云镜像源加速 apk 安装（国内网络环境下官方源极慢）
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /etc/apk/repositories \
+    && apk add --no-cache openssl
 
 # 2. 依赖安装
 FROM base AS deps
+# 国内加速：npm 包源使用 npmmirror
+RUN npm config set registry https://registry.npmmirror.com/
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 RUN npm ci
