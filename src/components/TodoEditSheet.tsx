@@ -33,12 +33,6 @@ interface TodoEditSheetProps {
   onCategoryCreated: (category: CategoryItem) => void;
 }
 
-const priorityLabels: Record<Priority, string> = {
-  HIGH: "高",
-  MEDIUM: "中",
-  LOW: "低",
-};
-
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }

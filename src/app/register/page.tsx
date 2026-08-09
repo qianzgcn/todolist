@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { registerAction } from "@/app/actions/authActions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,15 +34,15 @@ export default function RegisterPage() {
       await registerAction({ username, password, confirmPassword });
       router.push("/");
       router.refresh();
-    } catch (err: any) {
-      setError(err?.message || "注册失败，请重新尝试");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "注册失败，请重新尝试");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 overflow-hidden p-4 select-none">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 overflow-hidden p-4">
       {/*  苹果风沉浸式背景柔光 */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[500px] rounded-full bg-gradient-to-tr from-emerald-400/20 via-teal-300/15 to-blue-300/10 dark:from-emerald-600/15 dark:via-teal-600/10 dark:to-blue-600/5 blur-[120px] pointer-events-none" />
 
@@ -70,9 +72,13 @@ export default function RegisterPage() {
           <div className="space-y-1">
             <div className="relative">
               <User className="absolute left-3.5 top-3.5 size-4 text-slate-400" />
-              <input
+              <Label htmlFor="register-username" className="sr-only">
+                用户名
+              </Label>
+              <Input
+                id="register-username"
                 type="text"
-                autoComplete="off"
+                autoComplete="username"
                 placeholder="用户名"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -85,8 +91,13 @@ export default function RegisterPage() {
           <div className="space-y-1">
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 size-4 text-slate-400" />
-              <input
+              <Label htmlFor="register-password" className="sr-only">
+                密码
+              </Label>
+              <Input
+                id="register-password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 placeholder="密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -96,6 +107,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "隐藏密码" : "显示密码"}
                 className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 title={showPassword ? "隐藏密码" : "显示明文密码"}
               >
@@ -107,8 +119,13 @@ export default function RegisterPage() {
           <div className="space-y-1">
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 size-4 text-slate-400" />
-              <input
+              <Label htmlFor="register-confirm-password" className="sr-only">
+                确认密码
+              </Label>
+              <Input
+                id="register-confirm-password"
                 type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
                 placeholder="确认密码"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -118,6 +135,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? "隐藏确认密码" : "显示确认密码"}
                 className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 title={showConfirmPassword ? "隐藏密码" : "显示明文密码"}
               >

@@ -127,8 +127,6 @@ export function TodoApp({
         setCategoryId={setCategoryId}
         categories={categories}
         todos={todos}
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkModeOverride(!darkMode)}
         onCategoryCreated={handleCategoryCreated}
       />
 

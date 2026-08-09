@@ -4,8 +4,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckSquare,
-  Sun,
-  Moon,
   Folder,
   Inbox,
   CheckCircle2,
@@ -16,7 +14,6 @@ import {
   X,
   Users,
   LogOut,
-  User as UserIcon,
 } from "lucide-react";
 import type {
   CategoryItem,
@@ -42,8 +39,6 @@ interface SidebarProps {
   setCategoryId: (id: string) => void;
   categories: CategoryItem[];
   todos: TodoItem[];
-  darkMode: boolean;
-  onToggleDarkMode: () => void;
   onCategoryCreated: (category: CategoryItem) => void;
 }
 
@@ -57,8 +52,6 @@ export function Sidebar({
   setCategoryId,
   categories,
   todos,
-  darkMode,
-  onToggleDarkMode,
   onCategoryCreated,
 }: SidebarProps) {
   const router = useRouter();

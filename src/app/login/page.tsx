@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { loginAction } from "@/app/actions/authActions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,15 +26,15 @@ export default function LoginPage() {
       await loginAction({ username, password });
       router.push("/");
       router.refresh();
-    } catch (err: any) {
-      setError(err?.message || "登录失败，请检查用户名和密码");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "登录失败，请检查用户名和密码");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 overflow-hidden p-4 select-none">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 overflow-hidden p-4">
       {/*  苹果风沉浸式背景柔光 */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[500px] rounded-full bg-gradient-to-tr from-blue-400/20 via-indigo-300/15 to-purple-300/10 dark:from-blue-600/15 dark:via-indigo-600/10 dark:to-purple-600/5 blur-[120px] pointer-events-none" />
 
@@ -62,9 +64,13 @@ export default function LoginPage() {
           <div className="space-y-1">
             <div className="relative">
               <User className="absolute left-3.5 top-3.5 size-4 text-slate-400" />
-              <input
+              <Label htmlFor="login-username" className="sr-only">
+                用户名
+              </Label>
+              <Input
+                id="login-username"
                 type="text"
-                autoComplete="off"
+                autoComplete="username"
                 placeholder="用户名"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -77,8 +83,13 @@ export default function LoginPage() {
           <div className="space-y-1">
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 size-4 text-slate-400" />
-              <input
+              <Label htmlFor="login-password" className="sr-only">
+                密码
+              </Label>
+              <Input
+                id="login-password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
                 placeholder="密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -88,6 +99,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "隐藏密码" : "显示密码"}
                 className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 title={showPassword ? "隐藏密码" : "显示明文密码"}
               >

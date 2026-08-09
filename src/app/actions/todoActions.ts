@@ -27,6 +27,21 @@ async function requireUser() {
   return user;
 }
 
+async function requireOwnedCategory(userId: string, categoryId: string | null | undefined) {
+  if (categoryId === undefined || categoryId === null) return categoryId;
+
+  const category = await prisma.category.findFirst({
+    where: { id: categoryId, userId },
+    select: { id: true },
+  });
+
+  if (!category) {
+    throw new Error("无权使用该分类");
+  }
+
+  return categoryId;
+}
+
 export async function createTodo(
   input: CreateTodoInput,
 ): Promise<TodoItem> {
@@ -39,7 +54,11 @@ export async function createTodo(
   const title = readRequiredText(input.title, "任务标题", 200);
   const priority = readPriority(input.priority, "MEDIUM") ?? "MEDIUM";
   const dueDate = readDueDate(input.dueDate) ?? null;
-  const categoryId = readNullableId(input.categoryId) ?? null;
+  const categoryId =
+    (await requireOwnedCategory(
+      user.userId,
+      readNullableId(input.categoryId),
+    )) ?? null;
 
   const todo = await prisma.todo.create({
     data: {
@@ -110,7 +129,10 @@ export async function updateTodo(
   const dueDate = readDueDate(input.dueDate);
   if (dueDate !== undefined) data.dueDate = dueDate;
 
-  const categoryId = readNullableId(input.categoryId);
+  const categoryId = await requireOwnedCategory(
+    user.userId,
+    readNullableId(input.categoryId),
+  );
   if (categoryId !== undefined) {
     data.categoryId = categoryId;
   }

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Users, KeyRound, ShieldAlert, Check, RefreshCw, Eye, EyeOff } from "lucide-react";
+import React, { useState, useCallback } from "react";
+import { Users, KeyRound, Check, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { getUsersAction, adminResetPasswordAction } from "@/app/actions/authActions";
 import {
@@ -49,24 +49,23 @@ export function AdminUserSheet({ open, onOpenChange }: AdminUserSheetProps) {
   const [resetSuccess, setResetSuccess] = useState<string | null>(null);
   const [isResetting, setIsResetting] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const data = await getUsersAction();
       setUsers(data);
-    } catch (err: any) {
-      setError(err?.message || "获取用户列表失败");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "获取用户列表失败");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    if (open) {
-      fetchUsers();
-    }
-  }, [open]);
+  const handleSheetOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (nextOpen) void fetchUsers();
+  };
 
   const handleOpenResetModal = (user: UserItem) => {
     setResetTarget(user);
@@ -86,12 +85,8 @@ export function AdminUserSheet({ open, onOpenChange }: AdminUserSheetProps) {
     try {
       await adminResetPasswordAction(resetTarget.id, newPassword);
       setResetSuccess(`成功将用户 “${resetTarget.username}” 的密码重置为新密码！`);
-      setTimeout(() => {
-        setResetTarget(null);
-        setNewPassword("");
-      }, 1500);
-    } catch (err: any) {
-      setResetError(err?.message || "密码重置失败");
+    } catch (error: unknown) {
+      setResetError(error instanceof Error ? error.message : "密码重置失败");
     } finally {
       setIsResetting(false);
     }
@@ -99,7 +94,7 @@ export function AdminUserSheet({ open, onOpenChange }: AdminUserSheetProps) {
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
+        <Sheet open={open} onOpenChange={handleSheetOpenChange}>
         <SheetContent side="right" showCloseButton={true} className="w-full sm:max-w-md p-6 flex flex-col h-full">
           <SheetHeader className="pb-4 border-b border-slate-200 dark:border-slate-800">
             <SheetTitle className="flex items-center gap-2 text-lg font-bold">

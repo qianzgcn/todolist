@@ -8,8 +8,38 @@ import {
   setAuthCookie,
   clearAuthCookie,
   getCurrentUser,
+  type UserRole,
 } from "@/lib/auth";
-import { readRequiredText } from "@/lib/todo-validation";
+import { readRequiredId, readRequiredText } from "@/lib/todo-validation";
+
+function toSession(user: {
+  id: string;
+  username: string;
+  role: string;
+}) {
+  if (user.role !== "ADMIN" && user.role !== "USER") {
+    throw new Error("用户角色无效");
+  }
+
+  return {
+    userId: user.id,
+    username: user.username,
+    role: user.role as UserRole,
+  };
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "";
+}
+
+function isUniqueConstraintError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "P2002"
+  );
+}
 
 export async function loginAction(formData: {
   username?: string;
@@ -18,10 +48,6 @@ export async function loginAction(formData: {
   try {
     const username = readRequiredText(formData.username, "用户名", 50);
     const password = readRequiredText(formData.password, "密码", 100);
-
-    if (!prisma.user) {
-      throw new Error("用户名或密码错误");
-    }
 
     const user = await prisma.user.findUnique({
       where: { username },
@@ -36,25 +62,19 @@ export async function loginAction(formData: {
       throw new Error("用户名或密码错误");
     }
 
-    const session = {
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-    };
+    const session = toSession(user);
 
     const token = await createAuthToken(session);
     await setAuthCookie(token);
 
     return { success: true, user: session };
-  } catch (err: any) {
-    if (
-      err?.message === "用户名或密码错误" ||
-      err?.message?.includes("不能为空")
-    ) {
-      throw err;
+  } catch (error: unknown) {
+    const message = errorMessage(error);
+    if (message === "用户名或密码错误" || message.includes("不能为空")) {
+      throw error;
     }
     // 捕获未预料的系统内部异常，防范敏感堆栈泄露
-    console.error("[Login Internal Error]:", err);
+    console.error("[Login Internal Error]:", error);
     throw new Error("用户名或密码错误");
   }
 }
@@ -81,10 +101,6 @@ export async function registerAction(formData: {
       throw new Error("两次输入的密码不一致");
     }
 
-    if (!prisma.user) {
-      throw new Error("系统注册失败，请稍后重试");
-    }
-
     const existing = await prisma.user.findUnique({
       where: { username },
     });
@@ -102,26 +118,27 @@ export async function registerAction(formData: {
       },
     });
 
-    const session = {
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-    };
+    const session = toSession(user);
 
     const token = await createAuthToken(session);
     await setAuthCookie(token);
 
     return { success: true, user: session };
-  } catch (err: any) {
+  } catch (error: unknown) {
+    const message = errorMessage(error);
     if (
-      err?.message === "用户名已被占用" ||
-      err?.message === "两次输入的密码不一致" ||
-      err?.message?.includes("至少需要") ||
-      err?.message?.includes("不能为空")
+      message === "用户名已被占用" ||
+      message === "两次输入的密码不一致" ||
+      message.includes("至少需要") ||
+      message.includes("不能为空") ||
+      isUniqueConstraintError(error)
     ) {
-      throw err;
+      if (isUniqueConstraintError(error)) {
+        throw new Error("用户名已被占用");
+      }
+      throw error;
     }
-    console.error("[Register Internal Error]:", err);
+    console.error("[Register Internal Error]:", error);
     throw new Error("注册失败，请重新尝试");
   }
 }
@@ -135,10 +152,6 @@ export async function getUsersAction() {
   const currentUser = await getCurrentUser();
   if (!currentUser || currentUser.role !== "ADMIN") {
     throw new Error("无权访问用户列表");
-  }
-
-  if (!prisma.user) {
-    return [];
   }
 
   const users = await prisma.user.findMany({
@@ -168,9 +181,7 @@ export async function adminResetPasswordAction(
     throw new Error("仅管理员可重置密码");
   }
 
-  if (!targetUserId) {
-    throw new Error("目标用户 ID 无效");
-  }
+  const userId = readRequiredId(targetUserId);
 
   const password = readRequiredText(newPassword, "新密码", 100);
   if (password.length < 6) {
@@ -179,7 +190,7 @@ export async function adminResetPasswordAction(
 
   const hashedPassword = await hashPassword(password);
   await prisma.user.update({
-    where: { id: targetUserId },
+    where: { id: userId },
     data: { password: hashedPassword },
   });
 

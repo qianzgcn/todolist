@@ -2,16 +2,21 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "todolist_jwt_secret_key_2026_super_secure"
-);
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error("JWT_SECRET 未配置");
+}
+
+const JWT_SECRET = new TextEncoder().encode(jwtSecret);
 
 export const AUTH_COOKIE_NAME = "todolist_session";
+
+export type UserRole = "ADMIN" | "USER";
 
 export interface UserSession {
   userId: string;
   username: string;
-  role: string;
+  role: UserRole;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -37,13 +42,19 @@ export async function verifyAuthToken(
   token: string
 ): Promise<UserSession | null> {
   try {
-    const verified = await jwtVerify(token, JWT_SECRET);
-    const payload = verified.payload as unknown as UserSession;
-    if (payload.userId && payload.username && payload.role) {
+    const { payload } = await jwtVerify(token, JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
+    const role = payload.role;
+    if (
+      typeof payload.userId === "string" &&
+      typeof payload.username === "string" &&
+      (role === "ADMIN" || role === "USER")
+    ) {
       return {
         userId: payload.userId,
         username: payload.username,
-        role: payload.role,
+        role,
       };
     }
     return null;
