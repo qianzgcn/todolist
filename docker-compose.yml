@@ -1,19 +1,19 @@
+# Docker Compose 简易部署配置
 services:
   todolist:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: todolist-app
     restart: always
+    # 默认将目标服务器的 80 端口映射到容器内的 8001 端口
     ports:
-      - "8001:8001"
+      - "80:8001"
     environment:
       - PORT=8001
       - DATABASE_URL=file:/app/prisma/dev.db
-      - SEED_DB_ON_STARTUP=true
+    # 持久化挂载 SQLite 数据库，避免容器重启丢失数据
     volumes:
       - todolist_data:/app/prisma
 
+# 定义本地持久化数据卷
 volumes:
   todolist_data:
-    driver: local
