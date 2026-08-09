@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AlertCircle, Calendar, Edit2, Trash2 } from "lucide-react";
 import type { TodoItem as TodoType } from "@/types/todo";
+import { PRIORITY_CONFIG } from "@/lib/priority-config";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,15 +48,8 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
   }, [todo.dueDate, isOverdue]);
 
   const priorityBadge = useMemo(() => {
-    const styles = {
-      HIGH: "bg-amber-100 text-amber-800 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/80",
-      MEDIUM:
-        "bg-blue-100 text-blue-700 border-blue-200/80 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/80",
-      LOW: "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
-    };
-    const labels = { HIGH: "高", MEDIUM: "中", LOW: "低" };
-
-    return <Badge className={styles[todo.priority]}>{labels[todo.priority]}</Badge>;
+    const config = PRIORITY_CONFIG[todo.priority];
+    return <Badge className={config.badgeClass}>{config.label}</Badge>;
   }, [todo.priority]);
 
   const formattedDueDate = todo.dueDate
@@ -97,14 +91,14 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
             : "hover:ring-foreground/20"
         } ${isDeleting ? "scale-95 opacity-0" : "scale-100"}`}
       >
-        <CardContent className="flex items-start justify-between gap-3 p-3.5">
-          <div className="flex min-w-0 flex-1 items-start gap-3">
-            <div className="mt-0.5 flex shrink-0 items-center justify-center">
+        <CardContent className="flex items-center justify-between gap-3 p-3.5">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex shrink-0 items-center justify-center self-center">
               <Checkbox
                 checked={todo.completed}
                 onCheckedChange={() => void onToggle(todo.id, !todo.completed)}
                 aria-label={todo.completed ? "标记为待办" : "标记为已完成"}
-                className="text-white data-checked:border-emerald-600 data-checked:bg-emerald-600 dark:data-checked:bg-emerald-600"
+                className="text-white data-checked:border-emerald-600 data-checked:bg-emerald-600 dark:data-checked:bg-emerald-600 cursor-pointer"
               />
             </div>
 

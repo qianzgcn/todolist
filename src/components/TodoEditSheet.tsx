@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import type { CategoryItem, Priority, TodoItem } from "@/types/todo";
+import { PRIORITY_CONFIG } from "@/lib/priority-config";
 import { createCategory, updateTodo } from "@/app/actions/todoActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,13 +142,7 @@ export function TodoEditSheet({
               >
                 {(["HIGH", "MEDIUM", "LOW"] as Priority[]).map((value) => {
                   const selected = priority === value;
-                  const selectedStyles: Record<Priority, string> = {
-                    HIGH:
-                      "border-amber-400 bg-amber-100 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/70 dark:text-amber-300",
-                    MEDIUM:
-                      "border-blue-400 bg-blue-100 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950/70 dark:text-blue-300",
-                    LOW: "border-slate-400 bg-slate-200 text-slate-800 hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200",
-                  };
+                  const config = PRIORITY_CONFIG[value];
 
                   return (
                     <Button
@@ -156,9 +151,9 @@ export function TodoEditSheet({
                       variant="outline"
                       aria-pressed={selected}
                       onClick={() => setPriority(value)}
-                      className={selected ? selectedStyles[value] : ""}
+                      className={selected ? config.editSelectedClass : ""}
                     >
-                      {priorityLabels[value]}
+                      {config.label}
                     </Button>
                   );
                 })}

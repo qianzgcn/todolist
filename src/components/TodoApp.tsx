@@ -17,6 +17,7 @@ import type {
   TodoData,
   TodoItem,
 } from "@/types/todo";
+import type { UserSession } from "@/lib/auth";
 import { deleteTodo, toggleTodo } from "@/app/actions/todoActions";
 
 function subscribeToColorScheme(onChange: () => void) {
@@ -29,7 +30,13 @@ function getColorSchemeSnapshot() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
-export function TodoApp({ initialData }: { initialData: TodoData }) {
+export function TodoApp({
+  user,
+  initialData,
+}: {
+  user?: UserSession | null;
+  initialData: TodoData;
+}) {
   const prefersDark = useSyncExternalStore(
     subscribeToColorScheme,
     getColorSchemeSnapshot,
@@ -111,6 +118,7 @@ export function TodoApp({ initialData }: { initialData: TodoData }) {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-100 font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Sidebar
+        user={user}
         search={search}
         setSearch={setSearch}
         status={status}
@@ -132,6 +140,8 @@ export function TodoApp({ initialData }: { initialData: TodoData }) {
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
           todos={todos}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkModeOverride(!darkMode)}
           onTodoCreated={handleTodoCreated}
         />
 

@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowDownUp, Plus, Tag, Flag } from "lucide-react";
+import { ArrowUp, ArrowDown, Plus, Sun, Moon } from "lucide-react";
 import { format } from "date-fns";
 import { SortOrder, TodoItem, CategoryItem, Priority } from "@/types/todo";
+import { PRIORITY_CONFIG } from "@/lib/priority-config";
 import { createTodo } from "@/app/actions/todoActions";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,8 @@ interface RightTopPanelProps {
   sortOrder: SortOrder;
   setSortOrder: (sortOrder: SortOrder) => void;
   todos: TodoItem[];
+  darkMode?: boolean;
+  onToggleDarkMode?: () => void;
   onTodoCreated: (todo: TodoItem) => void;
 }
 
@@ -35,6 +37,8 @@ export function RightTopPanel({
   sortOrder,
   setSortOrder,
   todos,
+  darkMode,
+  onToggleDarkMode,
   onTodoCreated,
 }: RightTopPanelProps) {
   // 快速创建状态
@@ -58,15 +62,14 @@ export function RightTopPanel({
         selectedCatId && selectedCatId !== "NONE" ? selectedCatId : null;
 
       const todo = await createTodo({
-        title: quickTitle.trim(),
+        title: quickTitle,
         priority: quickPriority,
         dueDate: quickDueDate || null,
         categoryId: targetCatId,
       });
-      onTodoCreated(todo);
 
+      onTodoCreated(todo);
       setQuickTitle("");
-      // 重置为默认：今天，默认中优先级，当前分类
       setQuickPriority("MEDIUM");
       setQuickDueDate(format(new Date(), "yyyy-MM-dd"));
     } catch (err) {
@@ -90,63 +93,41 @@ export function RightTopPanel({
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
 
-  const priorityLabelMap: Record<Priority, string> = {
-    HIGH: "高",
-    MEDIUM: "中",
-    LOW: "低",
-  };
-
-  const priorityColorMap: Record<Priority, string> = {
-    HIGH: "text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/70 border-amber-300 dark:border-amber-800",
-    MEDIUM: "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/70 border-blue-300 dark:border-blue-800",
-    LOW: "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700",
-  };
-
-  // 按照不同完成度百分比，提供丰富的视觉提示与颜色区分（100% 呈现高亮翡翠绿）
+  // 按照不同完成度百分比，提供指示器颜色区分
   const progressInfo = React.useMemo(() => {
     if (total === 0) {
       return {
-        label: "无任务",
         textStyle: "text-slate-400 dark:text-slate-500",
-        badgeStyle: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
         indicatorStyle: "bg-slate-300 dark:bg-slate-700",
       };
     }
     if (percent === 100) {
       return {
-        label: "🎉 全部完成",
         textStyle: "text-emerald-600 dark:text-emerald-400 font-bold",
-        badgeStyle: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 font-semibold",
         indicatorStyle: "bg-emerald-500",
       };
     }
     if (percent >= 50) {
       return {
-        label: "进度过半",
         textStyle: "text-blue-600 dark:text-blue-400 font-semibold",
-        badgeStyle: "bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300",
         indicatorStyle: "bg-blue-500",
       };
     }
     if (percent > 0) {
       return {
-        label: "加油起步",
         textStyle: "text-amber-600 dark:text-amber-400 font-semibold",
-        badgeStyle: "bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300",
         indicatorStyle: "bg-amber-500",
       };
     }
     return {
-      label: "尚未开始",
       textStyle: "text-slate-500 dark:text-slate-400",
-      badgeStyle: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
       indicatorStyle: "bg-slate-400",
     };
   }, [percent, total]);
 
   return (
     <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-4 space-y-3 flex-shrink-0">
-      {/* 📊 1. 最上方：与分类强关联的统计指标与 1-Click 排序 */}
+      {/* 📊 1. 最上方：统计指标、单按键排序与极简暗黑模式图标 */}
       <div className="flex items-center justify-between gap-4 text-xs pb-1">
         <div className="flex items-center gap-4">
           <div>
@@ -174,122 +155,124 @@ export function RightTopPanel({
               />
             </div>
             <span className={`tabular-nums ${progressInfo.textStyle}`}>{percent}%</span>
-            <Badge variant="secondary" className={`text-[10px] px-1.5 py-0.5 border-0 ${progressInfo.badgeStyle}`}>
-              {progressInfo.label}
-            </Badge>
           </div>
 
+          {/* ↕️ 排序图标：只显示单一方向箭头，按需要切换 */}
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon-xs"
             onClick={toggleSortOrder}
-            className="flex items-center gap-1.5 h-7 px-2 text-xs text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
-            title="点击直接切换创建时间顺序/逆序"
+            className="h-7 w-7 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+            title={sortOrder === "asc" ? "顺序（最早在前），点击切换逆序" : "逆序（最新在前），点击切换顺序"}
           >
-            <ArrowDownUp
-              className={`w-3.5 h-3.5 transition-transform duration-300 ${
-                sortOrder === "desc" ? "rotate-180 text-blue-600 dark:text-blue-400" : "text-slate-400"
-              }`}
-            />
-            <span>{sortOrder === "asc" ? "最早在前" : "最新在前"}</span>
+            {sortOrder === "asc" ? (
+              <ArrowUp className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+            ) : (
+              <ArrowDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            )}
           </Button>
+
+          {/* ☀️/🌙 右上角明暗模式图标 */}
+          {onToggleDarkMode && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={onToggleDarkMode}
+              className="h-7 w-7 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+              title={darkMode ? "切换至浅色模式" : "切换至暗黑模式"}
+            >
+              {darkMode ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
       <Separator />
 
-      {/* 🚀 2. 紧邻待办列表：高效率极速创建任务条 */}
-      <form onSubmit={handleQuickCreate} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-0.5">
-        <div className="relative flex-1 flex items-center">
+      {/* 🚀 2. 下方：单行整体快捷创建表单（标题、优先级、截止日期、分类、创建按钮在一行紧凑排布） */}
+      <form onSubmit={handleQuickCreate} className="flex items-center gap-2 w-full">
+        {/* 任务标题输入框 */}
+        <div className="flex-1 min-w-0">
           <Label htmlFor="quick-todo-title" className="sr-only">
-            任务名称
+            任务标题
           </Label>
           <Input
             id="quick-todo-title"
             type="text"
-            placeholder="添加任务..."
+            placeholder="快捷添加新任务..."
             value={quickTitle}
             onChange={(e) => setQuickTitle(e.target.value)}
-            className="w-full pr-2 text-sm h-9 shadow-xs"
+            disabled={isSubmitting}
+            className="h-8 text-xs bg-slate-100/60 dark:bg-slate-900/60"
           />
         </div>
 
-        {/* 快捷配置属性按钮组 */}
-        <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
-          {/* 日期快捷配置 */}
-          <div className="w-36">
-            <Label htmlFor="quick-todo-date" className="sr-only">
-              截止日期
-            </Label>
-            <DatePicker
-              id="quick-todo-date"
-              value={quickDueDate}
-              onChange={(val) => setQuickDueDate(val)}
-              placeholder="今日完成"
-              className="h-9 text-xs"
-            />
-          </div>
-
-          {/* 优先级快捷切换（清晰显目的 3 色区分） */}
-          <Select
-            value={quickPriority}
-            onValueChange={(val) => setQuickPriority((val as Priority) || "MEDIUM")}
-          >
-            <SelectTrigger
-              aria-label="优先级"
-              className={`w-20 h-9 px-2.5 text-xs font-medium ${priorityColorMap[quickPriority]}`}
-            >
-              <SelectValue>
-                <span className="flex items-center gap-1">
-                  <Flag className="w-3 h-3 flex-shrink-0" />
-                  <span>{priorityLabelMap[quickPriority]}</span>
+        {/* 优先级选择 */}
+        <Select
+          value={quickPriority}
+          onValueChange={(val) => setQuickPriority((val as Priority) ?? "MEDIUM")}
+        >
+          <SelectTrigger className="h-8 w-20 text-xs bg-slate-100/60 dark:bg-slate-900/60 border-0 shrink-0">
+            <SelectValue>
+              <span className="flex items-center gap-1.5">
+                <span className={`inline-block size-2 rounded-full ${PRIORITY_CONFIG[quickPriority].dotClass}`} />
+                <span>{PRIORITY_CONFIG[quickPriority].label}</span>
+              </span>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {(["HIGH", "MEDIUM", "LOW"] as Priority[]).map((p) => (
+              <SelectItem key={p} value={p}>
+                <span className="flex items-center gap-1.5">
+                  <span className={`inline-block size-2 rounded-full ${PRIORITY_CONFIG[p].dotClass}`} />
+                  <span>{PRIORITY_CONFIG[p].label}</span>
                 </span>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="min-w-[80px] w-auto p-1">
-              <SelectItem value="HIGH">
-                <span className="text-amber-700 dark:text-amber-400 font-medium">高</span>
               </SelectItem>
-              <SelectItem value="MEDIUM">
-                <span className="text-blue-700 dark:text-blue-400 font-medium">中</span>
-              </SelectItem>
-              <SelectItem value="LOW">
-                <span className="text-slate-600 dark:text-slate-400 font-medium">低</span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            ))}
+          </SelectContent>
+        </Select>
 
-          {/* 分类快捷选择 */}
-          <Select
-            value={selectedCatId || "NONE"}
-            onValueChange={(val) => setSelectedCatId(val ?? "")}
-          >
-            <SelectTrigger aria-label="所属分类" className="w-28 h-9 text-xs">
-              <SelectValue>
-                <span className="flex items-center gap-1 truncate">
-                  <Tag className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                  <span className="truncate">
-                    {categories.find((c) => c.id === selectedCatId)?.name || "其他"}
-                  </span>
-                </span>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="NONE">其他 (未分类)</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* 提交按钮 */}
-          <Button type="submit" disabled={isSubmitting || !quickTitle.trim()} size="sm" className="h-9 px-3">
-            <Plus className="w-4 h-4" />
-            <span>添加</span>
-          </Button>
+        {/* 截止日期选择 */}
+        <div className="shrink-0">
+          <DatePicker
+            value={quickDueDate}
+            onChange={(dateStr) => setQuickDueDate(dateStr ?? "")}
+            className="h-8 text-xs bg-slate-100/60 dark:bg-slate-900/60 border-0"
+          />
         </div>
+
+        {/* 分类选择 */}
+        <Select
+          value={selectedCatId}
+          onValueChange={(val) => setSelectedCatId(val ?? "")}
+        >
+          <SelectTrigger className="h-8 w-28 text-xs bg-slate-100/60 dark:bg-slate-900/60 border-0 shrink-0">
+            <SelectValue placeholder="无分类" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="NONE">无分类</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                📁 {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* 创建提交按钮 */}
+        <Button
+          type="submit"
+          size="sm"
+          disabled={!quickTitle.trim() || isSubmitting}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 h-8 text-xs cursor-pointer shadow-sm shadow-blue-500/20 shrink-0"
+        >
+          <Plus className="w-3.5 h-3.5 mr-1" />
+          <span>创建任务</span>
+        </Button>
       </form>
     </div>
   );

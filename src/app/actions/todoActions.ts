@@ -2,6 +2,7 @@
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 import { toCategoryItem, toTodoItem } from "@/lib/todo-data";
 import {
   readBoolean,
@@ -18,9 +19,19 @@ import type {
   UpdateTodoInput,
 } from "@/types/todo";
 
+async function requireUser() {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("请先登录系统");
+  }
+  return user;
+}
+
 export async function createTodo(
   input: CreateTodoInput,
 ): Promise<TodoItem> {
+  const user = await requireUser();
+
   if (!input || typeof input !== "object") {
     throw new Error("任务数据无效");
   }
@@ -35,9 +46,8 @@ export async function createTodo(
       title,
       priority,
       dueDate,
-      ...(categoryId
-        ? { category: { connect: { id: categoryId } } }
-        : {}),
+      userId: user.userId,
+      categoryId,
     },
     include: { category: true },
   });
@@ -49,8 +59,19 @@ export async function toggleTodo(
   id: string,
   completed: boolean,
 ): Promise<TodoItem> {
+  const user = await requireUser();
+  const todoId = readRequiredId(id);
+
+  const existing = await prisma.todo.findFirst({
+    where: { id: todoId, userId: user.userId },
+  });
+
+  if (!existing) {
+    throw new Error("无权修改该任务");
+  }
+
   const todo = await prisma.todo.update({
-    where: { id: readRequiredId(id) },
+    where: { id: todoId },
     data: { completed: readBoolean(completed) },
     include: { category: true },
   });
@@ -62,11 +83,22 @@ export async function updateTodo(
   id: string,
   input: UpdateTodoInput,
 ): Promise<TodoItem> {
+  const user = await requireUser();
+  const todoId = readRequiredId(id);
+
+  const existing = await prisma.todo.findFirst({
+    where: { id: todoId, userId: user.userId },
+  });
+
+  if (!existing) {
+    throw new Error("无权修改该任务");
+  }
+
   if (!input || typeof input !== "object") {
     throw new Error("任务数据无效");
   }
 
-  const data: Prisma.TodoUpdateInput = {};
+  const data: Prisma.TodoUncheckedUpdateInput = {};
 
   if (input.title !== undefined) {
     data.title = readRequiredText(input.title, "任务标题", 200);
@@ -80,9 +112,7 @@ export async function updateTodo(
 
   const categoryId = readNullableId(input.categoryId);
   if (categoryId !== undefined) {
-    data.category = categoryId
-      ? { connect: { id: categoryId } }
-      : { disconnect: true };
+    data.categoryId = categoryId;
   }
 
   if (Object.keys(data).length === 0) {
@@ -90,7 +120,7 @@ export async function updateTodo(
   }
 
   const todo = await prisma.todo.update({
-    where: { id: readRequiredId(id) },
+    where: { id: todoId },
     data,
     include: { category: true },
   });
@@ -99,22 +129,35 @@ export async function updateTodo(
 }
 
 export async function deleteTodo(id: string) {
+  const user = await requireUser();
+  const todoId = readRequiredId(id);
+
+  const existing = await prisma.todo.findFirst({
+    where: { id: todoId, userId: user.userId },
+  });
+
+  if (!existing) {
+    throw new Error("无权删除该任务");
+  }
+
   await prisma.todo.delete({
-    where: { id: readRequiredId(id) },
+    where: { id: todoId },
   });
 }
 
 export async function createCategory(name: string): Promise<CategoryItem> {
+  const user = await requireUser();
   const trimmed = readRequiredText(name, "分类名称", 50);
-  const existing = await prisma.category.findUnique({
-    where: { name: trimmed },
+
+  const existing = await prisma.category.findFirst({
+    where: { name: trimmed, userId: user.userId },
   });
 
   if (existing) return toCategoryItem(existing);
 
   return toCategoryItem(
     await prisma.category.create({
-      data: { name: trimmed },
+      data: { name: trimmed, userId: user.userId },
     }),
   );
 }

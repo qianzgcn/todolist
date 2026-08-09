@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 import {
   PRIORITIES,
   type CategoryItem,
@@ -49,12 +50,21 @@ export function toTodoItem(todo: TodoWithCategory): TodoItem {
 export async function getTodoData(
   client: TodoReader = prisma,
 ): Promise<TodoData> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { todos: [], categories: [] };
+  }
+
   const [todos, categories] = await Promise.all([
     client.todo.findMany({
+      where: { userId: user.userId },
       include: { category: true },
       orderBy: [{ completed: "asc" }, { createdAt: "asc" }],
     }),
-    client.category.findMany({ orderBy: { name: "asc" } }),
+    client.category.findMany({
+      where: { userId: user.userId },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   return {
