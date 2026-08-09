@@ -17,6 +17,12 @@ fi
 grep -q '^DATABASE_URL=' "$ENV_FILE" || { echo "部署环境文件缺少 DATABASE_URL" >&2; exit 1; }
 grep -q '^JWT_SECRET=' "$ENV_FILE" || { echo "部署环境文件缺少 JWT_SECRET" >&2; exit 1; }
 
+disk_usage=$(df -P / | awk 'NR == 2 { gsub("%", "", $5); print $5 }')
+if (( disk_usage >= 90 )); then
+  echo "磁盘使用率 ${disk_usage}%，清理 Docker 构建缓存"
+  docker builder prune -af
+fi
+
 cd "$PROJECT_DIR"
 git pull --ff-only origin main
 docker compose --env-file "$ENV_FILE" up -d --build
