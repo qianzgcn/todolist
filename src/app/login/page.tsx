@@ -23,11 +23,13 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await loginAction({ username, password });
+      const result = await loginAction({ username, password });
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
       router.push("/");
       router.refresh();
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "登录失败，请检查用户名和密码");
     } finally {
       setIsSubmitting(false);
     }

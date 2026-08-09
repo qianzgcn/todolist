@@ -12,6 +12,8 @@ import {
 } from "@/lib/auth";
 import { readRequiredId, readRequiredText } from "@/lib/todo-validation";
 
+type AuthActionFailure = { success: false; error: string };
+
 function toSession(user: {
   id: string;
   username: string;
@@ -71,11 +73,11 @@ export async function loginAction(formData: {
   } catch (error: unknown) {
     const message = errorMessage(error);
     if (message === "用户名或密码错误" || message.includes("不能为空")) {
-      throw error;
+      return { success: false, error: message } satisfies AuthActionFailure;
     }
     // 捕获未预料的系统内部异常，防范敏感堆栈泄露
     console.error("[Login Internal Error]:", error);
-    throw new Error("用户名或密码错误");
+    return { success: false, error: "登录失败，请稍后重试" } satisfies AuthActionFailure;
   }
 }
 
@@ -134,12 +136,12 @@ export async function registerAction(formData: {
       isUniqueConstraintError(error)
     ) {
       if (isUniqueConstraintError(error)) {
-        throw new Error("用户名已被占用");
+        return { success: false, error: "用户名已被占用" } satisfies AuthActionFailure;
       }
-      throw error;
+      return { success: false, error: message } satisfies AuthActionFailure;
     }
     console.error("[Register Internal Error]:", error);
-    throw new Error("注册失败，请重新尝试");
+    return { success: false, error: "注册失败，请稍后重试" } satisfies AuthActionFailure;
   }
 }
 

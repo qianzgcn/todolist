@@ -31,11 +31,13 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      await registerAction({ username, password, confirmPassword });
+      const result = await registerAction({ username, password, confirmPassword });
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
       router.push("/");
       router.refresh();
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "注册失败，请重新尝试");
     } finally {
       setIsSubmitting(false);
     }
