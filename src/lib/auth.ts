@@ -2,12 +2,13 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const jwtSecret = process.env.JWT_SECRET;
-if (!jwtSecret) {
-  throw new Error("JWT_SECRET 未配置");
+function getJwtSecret(): Uint8Array {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error("JWT_SECRET 未配置");
+  }
+  return new TextEncoder().encode(jwtSecret);
 }
-
-const JWT_SECRET = new TextEncoder().encode(jwtSecret);
 
 export const AUTH_COOKIE_NAME = "todolist_session";
 
@@ -35,14 +36,14 @@ export async function createAuthToken(session: UserSession): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifyAuthToken(
   token: string
 ): Promise<UserSession | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET, {
+    const { payload } = await jwtVerify(token, getJwtSecret(), {
       algorithms: ["HS256"],
     });
     const role = payload.role;
