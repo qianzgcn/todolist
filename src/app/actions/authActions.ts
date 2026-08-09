@@ -8,11 +8,15 @@ import {
   setAuthCookie,
   clearAuthCookie,
   getCurrentUser,
+  type UserSession,
   type UserRole,
 } from "@/lib/auth";
 import { readRequiredId, readRequiredText } from "@/lib/todo-validation";
 
 type AuthActionFailure = { success: false; error: string };
+type AuthActionResult =
+  | { success: true; user: UserSession }
+  | AuthActionFailure;
 
 function toSession(user: {
   id: string;
@@ -46,7 +50,7 @@ function isUniqueConstraintError(error: unknown) {
 export async function loginAction(formData: {
   username?: string;
   password?: string;
-}) {
+}): Promise<AuthActionResult> {
   try {
     const username = readRequiredText(formData.username, "用户名", 50);
     const password = readRequiredText(formData.password, "密码", 100);
@@ -85,7 +89,7 @@ export async function registerAction(formData: {
   username?: string;
   password?: string;
   confirmPassword?: string;
-}) {
+}): Promise<AuthActionResult> {
   try {
     const username = readRequiredText(formData.username, "用户名", 50);
     const password = readRequiredText(formData.password, "密码", 100);
