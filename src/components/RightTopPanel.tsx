@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { ArrowUp, ArrowDown, Plus, Sun, Moon } from "lucide-react";
 import { format } from "date-fns";
-import { SortOrder, TodoItem, CategoryItem, Priority } from "@/types/todo";
+import { SortOrder, TodoItem, CategoryItem, Priority, StatusFilter } from "@/types/todo";
 import { PRIORITY_CONFIG } from "@/lib/priority-config";
 import { createTodo } from "@/app/actions/todoActions";
 import { isDueDateToday } from "@/lib/todo-validation";
@@ -24,6 +24,8 @@ import {
 interface RightTopPanelProps {
   categoryId: string;
   categories: CategoryItem[];
+  status: StatusFilter;
+  setStatus: (status: StatusFilter) => void;
   sortOrder: SortOrder;
   setSortOrder: (sortOrder: SortOrder) => void;
   todos: TodoItem[];
@@ -35,6 +37,8 @@ interface RightTopPanelProps {
 export function RightTopPanel({
   categoryId,
   categories,
+  status,
+  setStatus,
   sortOrder,
   setSortOrder,
   todos,
@@ -146,7 +150,7 @@ export function RightTopPanel({
 
   return (
     <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-4 space-y-3 flex-shrink-0">
-      {/* 📊 1. 最上方：左侧当前选中菜单 Title + 统计指标、单按键排序与极简暗黑模式图标 */}
+      {/* 📊 1. 最上方：左侧当前选中菜单 Title + 可点击交互筛选的统计胶囊按钮 */}
       <div className="flex items-center justify-between gap-4 text-xs pb-1">
         <div className="flex items-center gap-3 min-w-0">
           {/* 左侧突出显示当前选中菜单的 Title */}
@@ -156,19 +160,52 @@ export function RightTopPanel({
 
           <span className="text-slate-300 dark:text-slate-700 shrink-0">|</span>
 
-          <div className="flex items-center gap-3 text-xs">
-            <div>
-              <span className="text-slate-400">总计: </span>
-              <span className="font-semibold text-slate-700 dark:text-slate-200">{total}</span>
-            </div>
-            <div>
-              <span className="text-slate-400">进行中: </span>
-              <span className="font-semibold text-amber-600 dark:text-amber-400">{total - completed}</span>
-            </div>
-            <div>
-              <span className="text-slate-400">已完成: </span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">{completed}</span>
-            </div>
+          {/* 可点击交互筛选的统计数字胶囊 */}
+          <div className="flex items-center gap-1.5 text-xs">
+            {/* 1. 总计胶囊 */}
+            <button
+              type="button"
+              onClick={() => setStatus("ALL")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border ${
+                status === "ALL"
+                  ? "bg-slate-200 dark:bg-slate-800 border-slate-400 dark:border-slate-600 text-slate-900 dark:text-slate-100 shadow-xs font-bold scale-105"
+                  : "bg-slate-100/70 dark:bg-slate-900/70 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 hover:scale-102"
+              }`}
+              title="点击查看所有任务"
+            >
+              <span>总计:</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100">{total}</span>
+            </button>
+
+            {/* 2. 进行中胶囊 */}
+            <button
+              type="button"
+              onClick={() => setStatus("ACTIVE")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border ${
+                status === "ACTIVE"
+                  ? "bg-blue-100 dark:bg-blue-950/80 border-blue-400 dark:border-blue-600 text-blue-900 dark:text-blue-100 shadow-xs font-bold scale-105"
+                  : "bg-blue-50/70 dark:bg-blue-950/40 border-transparent text-blue-700 dark:text-blue-400 hover:bg-blue-100/70 dark:hover:bg-blue-900/60 hover:scale-102"
+              }`}
+              title="点击筛选进行中（未完成）任务"
+            >
+              <span>进行中:</span>
+              <span className="font-bold text-blue-600 dark:text-blue-400">{total - completed}</span>
+            </button>
+
+            {/* 3. 已完成胶囊 */}
+            <button
+              type="button"
+              onClick={() => setStatus("COMPLETED")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer border ${
+                status === "COMPLETED"
+                  ? "bg-emerald-100 dark:bg-emerald-950/80 border-emerald-400 dark:border-emerald-600 text-emerald-900 dark:text-emerald-100 shadow-xs font-bold scale-105"
+                  : "bg-emerald-50/70 dark:bg-emerald-950/40 border-transparent text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/60 hover:scale-102"
+              }`}
+              title="点击筛选已完成任务"
+            >
+              <span>已完成:</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">{completed}</span>
+            </button>
           </div>
         </div>
 

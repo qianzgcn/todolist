@@ -14,6 +14,7 @@ import { TodoEditSheet } from "@/components/TodoEditSheet";
 import type {
   CategoryItem,
   SortOrder,
+  StatusFilter,
   TodoData,
   TodoItem,
 } from "@/types/todo";
@@ -48,6 +49,7 @@ export function TodoApp({
 
   const [todos, setTodos] = useState(initialData.todos);
   const [categories, setCategories] = useState(initialData.categories);
+  const [status, setStatus] = useState<StatusFilter>("ALL");
   const [categoryId, setCategoryId] = useState("MY_DAY");
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
@@ -62,6 +64,8 @@ export function TodoApp({
 
     return todos
       .filter((todo) => {
+        if (status === "ACTIVE" && todo.completed) return false;
+        if (status === "COMPLETED" && !todo.completed) return false;
         if (categoryId === "MY_DAY" && !isDueDateToday(todo.dueDate)) return false;
         if (
           categoryId !== "ALL" &&
@@ -78,7 +82,7 @@ export function TodoApp({
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? difference : -difference;
       });
-  }, [todos, categoryId, search, sortOrder]);
+  }, [todos, status, categoryId, search, sortOrder]);
 
   const replaceTodo = (todo: TodoItem) => {
     setTodos((current) =>
@@ -118,7 +122,7 @@ export function TodoApp({
     );
   };
 
-  const hasFilter = categoryId !== "MY_DAY" || search.trim() !== "";
+  const hasFilter = status !== "ALL" || categoryId !== "MY_DAY" || search.trim() !== "";
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-100 font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -138,6 +142,8 @@ export function TodoApp({
           key={categoryId}
           categoryId={categoryId}
           categories={categories}
+          status={status}
+          setStatus={setStatus}
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
           todos={todos}
