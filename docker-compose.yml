@@ -1,7 +1,10 @@
 # Docker Compose 部署配置 (连接外部已有 MySQL)
 services:
   todolist:
-    build: .
+    build:
+      context: .
+      args:
+        DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
     container_name: todolist-app
     restart: always
     # 默认将目标服务器的 80 端口映射到容器内的 8001 端口

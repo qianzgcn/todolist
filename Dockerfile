@@ -15,6 +15,8 @@ RUN npm ci
 
 # 3. 项目构建
 FROM base AS builder
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NODE_ENV=production
