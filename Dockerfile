@@ -1,5 +1,5 @@
 # 1. 基础环境
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 # 使用阿里云镜像源加速 apk 安装（国内网络环境下官方源极慢）
 RUN sed -i 's#https\?://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /etc/apk/repositories \
