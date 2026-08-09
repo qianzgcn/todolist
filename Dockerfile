@@ -39,7 +39,14 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/src ./src
-COPY --from=builder /app/node_modules ./node_modules
+# 不再复制全量 node_modules（1.1G），standalone 已含运行时精简依赖；
+# 单独安装 prisma CLI 供 entrypoint 的 migrate deploy 使用
+# NODE_PATH 让 prisma.config.ts 能解析到 @prisma/config
+ENV NODE_PATH=/opt/prisma-cli/node_modules
+RUN npm config set registry https://registry.npmmirror.com/ \
+    && npm install --prefix /opt/prisma-cli prisma@7.9.1 @prisma/config@7.9.1 \
+    && ln -s /opt/prisma-cli/node_modules/.bin/prisma /usr/local/bin/prisma \
+    && rm -rf /root/.npm/_cacache
 
 EXPOSE 8001
 ENTRYPOINT ["docker-entrypoint.sh"]
