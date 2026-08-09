@@ -7,7 +7,7 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "todoList",
-  description: "基于 Next.js, Prisma 7 与 SQLite 构建的个人任务清单应用",
+  description: "基于 Next.js, Prisma 7 与 MySQL 构建的个人任务清单应用",
 };
 
 export default function RootLayout({
