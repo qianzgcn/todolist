@@ -1,9 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { databaseUrl } from "../src/lib/database-url";
+import { databaseAdapterConfig } from "../src/lib/database-url";
 import { resetDatabase } from "../src/lib/seed-data";
 
-const adapter = new PrismaMariaDb(databaseUrl);
+const adapter = new PrismaMariaDb(databaseAdapterConfig);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {

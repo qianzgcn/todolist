@@ -9,5 +9,4 @@ services:
       - "80:8001"
     environment:
       - PORT=8001
-      # 替换为你目标服务器上已有的 MySQL 连接信息
-      - DATABASE_URL=mysql://root:password@host.docker.internal:3306/todolist
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
