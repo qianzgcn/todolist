@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { format } from "date-fns";
+
 interface TodoEditSheetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -37,6 +39,17 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function formatDueDateForInput(dueDateStr: string | null | undefined): string {
+  if (!dueDateStr) return "";
+  try {
+    const d = new Date(dueDateStr);
+    if (Number.isNaN(d.getTime())) return "";
+    return format(d, "yyyy-MM-dd HH:mm");
+  } catch {
+    return "";
+  }
+}
+
 export function TodoEditSheet({
   isOpen,
   onClose,
@@ -47,7 +60,7 @@ export function TodoEditSheet({
 }: TodoEditSheetProps) {
   const [title, setTitle] = useState(todo.title);
   const [priority, setPriority] = useState(todo.priority);
-  const [dueDate, setDueDate] = useState(todo.dueDate?.slice(0, 10) ?? "");
+  const [dueDate, setDueDate] = useState(formatDueDateForInput(todo.dueDate));
   const [categoryId, setCategoryId] = useState(todo.categoryId ?? "NONE");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");

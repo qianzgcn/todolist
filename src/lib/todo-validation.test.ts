@@ -17,10 +17,17 @@ test("优先级只接受三个允许值", () => {
 });
 
 test("截止日期严格校验日期格式和有效性", () => {
-  assert.equal(
-    readDueDate("2026-08-09")?.toISOString(),
-    "2026-08-09T00:00:00.000Z",
-  );
+  const d1 = readDueDate("2026-08-09");
+  assert.equal(d1?.getFullYear(), 2026);
+  assert.equal(d1?.getMonth(), 7);
+  assert.equal(d1?.getDate(), 9);
+  assert.equal(d1?.getHours(), 23);
+  assert.equal(d1?.getMinutes(), 59);
+
+  const d2 = readDueDate("2026-08-09 14:30");
+  assert.equal(d2?.getHours(), 14);
+  assert.equal(d2?.getMinutes(), 30);
+
   assert.throws(() => readDueDate("2026-02-30"));
   assert.throws(() => readDueDate("09/08/2026"));
 });

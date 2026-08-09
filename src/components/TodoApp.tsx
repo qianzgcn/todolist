@@ -6,6 +6,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { format } from "date-fns";
 import { Sidebar } from "@/components/Sidebar";
 import { RightTopPanel } from "@/components/RightTopPanel";
 import { TodoList } from "@/components/TodoList";
@@ -13,12 +14,12 @@ import { TodoEditSheet } from "@/components/TodoEditSheet";
 import type {
   CategoryItem,
   SortOrder,
-  StatusFilter,
   TodoData,
   TodoItem,
 } from "@/types/todo";
 import type { UserSession } from "@/lib/auth";
 import { deleteTodo, toggleTodo } from "@/app/actions/todoActions";
+import { isDueDateToday } from "@/lib/todo-validation";
 
 function subscribeToColorScheme(onChange: () => void) {
   const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -47,8 +48,7 @@ export function TodoApp({
 
   const [todos, setTodos] = useState(initialData.todos);
   const [categories, setCategories] = useState(initialData.categories);
-  const [status, setStatus] = useState<StatusFilter>("ALL");
-  const [categoryId, setCategoryId] = useState("ALL");
+  const [categoryId, setCategoryId] = useState("MY_DAY");
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [editingTodo, setEditingTodo] = useState<TodoItem | null>(null);
@@ -59,11 +59,17 @@ export function TodoApp({
 
   const filteredTodos = useMemo(() => {
     const query = search.trim().toLowerCase();
+
     return todos
       .filter((todo) => {
-        if (status === "ACTIVE" && todo.completed) return false;
-        if (status === "COMPLETED" && !todo.completed) return false;
-        if (categoryId !== "ALL" && todo.categoryId !== categoryId) return false;
+        if (categoryId === "MY_DAY" && !isDueDateToday(todo.dueDate)) return false;
+        if (
+          categoryId !== "ALL" &&
+          categoryId !== "MY_DAY" &&
+          todo.categoryId !== categoryId
+        ) {
+          return false;
+        }
         return !query || todo.title.toLowerCase().includes(query);
       })
       .sort((a, b) => {
@@ -72,7 +78,7 @@ export function TodoApp({
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? difference : -difference;
       });
-  }, [todos, status, categoryId, search, sortOrder]);
+  }, [todos, categoryId, search, sortOrder]);
 
   const replaceTodo = (todo: TodoItem) => {
     setTodos((current) =>
@@ -112,8 +118,7 @@ export function TodoApp({
     );
   };
 
-  const hasFilter =
-    status !== "ALL" || categoryId !== "ALL" || search.trim() !== "";
+  const hasFilter = categoryId !== "MY_DAY" || search.trim() !== "";
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-100 font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -121,8 +126,6 @@ export function TodoApp({
         user={user}
         search={search}
         setSearch={setSearch}
-        status={status}
-        setStatus={setStatus}
         categoryId={categoryId}
         setCategoryId={setCategoryId}
         categories={categories}

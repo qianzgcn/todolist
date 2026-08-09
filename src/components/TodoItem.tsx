@@ -56,6 +56,8 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: TodoItemProps) {
     ? new Date(todo.dueDate).toLocaleDateString("zh-CN", {
         month: "numeric",
         day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       })
     : null;
 

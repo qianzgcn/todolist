@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { SortOrder, TodoItem, CategoryItem, Priority } from "@/types/todo";
 import { PRIORITY_CONFIG } from "@/lib/priority-config";
 import { createTodo } from "@/app/actions/todoActions";
+import { isDueDateToday } from "@/lib/todo-validation";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -45,12 +46,27 @@ export function RightTopPanel({
   const [quickTitle, setQuickTitle] = useState("");
   const [quickPriority, setQuickPriority] = useState<Priority>("MEDIUM");
   const [quickDueDate, setQuickDueDate] = useState<string>(
-    format(new Date(), "yyyy-MM-dd")
+    format(new Date(), "yyyy-MM-dd") + " 23:59"
   );
   const [selectedCatId, setSelectedCatId] = useState(
-    categoryId !== "ALL" ? categoryId : "",
+    categoryId !== "ALL" && categoryId !== "MY_DAY" ? categoryId : "",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 1. 计算当前选中菜单的标题文本
+  const activeTitle = React.useMemo(() => {
+    if (categoryId === "MY_DAY") return "☀️ 我的一天";
+    if (categoryId === "ALL") return "📂 全部分类";
+    const cat = categories.find((c) => c.id === categoryId);
+    return cat ? cat.name : "全部分类";
+  }, [categoryId, categories]);
+
+  // 2. 快捷创建栏选中的分类名称（纯文本显示，不暴露 ID，也不要文件夹图标）
+  const selectedCatName = React.useMemo(() => {
+    if (!selectedCatId || selectedCatId === "NONE") return "无分类";
+    const cat = categories.find((c) => c.id === selectedCatId);
+    return cat ? cat.name : "无分类";
+  }, [selectedCatId, categories]);
 
   const handleQuickCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +87,7 @@ export function RightTopPanel({
       onTodoCreated(todo);
       setQuickTitle("");
       setQuickPriority("MEDIUM");
-      setQuickDueDate(format(new Date(), "yyyy-MM-dd"));
+      setQuickDueDate(format(new Date(), "yyyy-MM-dd") + " 23:59");
     } catch (err) {
       console.error("快捷创建任务失败:", err);
     } finally {
@@ -79,9 +95,12 @@ export function RightTopPanel({
     }
   };
 
-  // 统计信息与当前选中的分类强关联
+  // 统计信息与当前选中的分类强关联（支持“我的一天”动态视图）
   const statsTodos = React.useMemo(() => {
     if (!categoryId || categoryId === "ALL") return todos;
+    if (categoryId === "MY_DAY") {
+      return todos.filter((t) => isDueDateToday(t.dueDate));
+    }
     return todos.filter((t) => t.categoryId === categoryId);
   }, [todos, categoryId]);
 
@@ -127,24 +146,33 @@ export function RightTopPanel({
 
   return (
     <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-4 space-y-3 flex-shrink-0">
-      {/* 📊 1. 最上方：统计指标、单按键排序与极简暗黑模式图标 */}
+      {/* 📊 1. 最上方：左侧当前选中菜单 Title + 统计指标、单按键排序与极简暗黑模式图标 */}
       <div className="flex items-center justify-between gap-4 text-xs pb-1">
-        <div className="flex items-center gap-4">
-          <div>
-            <span className="text-slate-400">总计: </span>
-            <span className="font-semibold text-slate-700 dark:text-slate-200">{total}</span>
-          </div>
-          <div>
-            <span className="text-slate-400">进行中: </span>
-            <span className="font-semibold text-amber-600 dark:text-amber-400">{total - completed}</span>
-          </div>
-          <div>
-            <span className="text-slate-400">已完成: </span>
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">{completed}</span>
+        <div className="flex items-center gap-3 min-w-0">
+          {/* 左侧突出显示当前选中菜单的 Title */}
+          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 shrink-0 truncate">
+            {activeTitle}
+          </h2>
+
+          <span className="text-slate-300 dark:text-slate-700 shrink-0">|</span>
+
+          <div className="flex items-center gap-3 text-xs">
+            <div>
+              <span className="text-slate-400">总计: </span>
+              <span className="font-semibold text-slate-700 dark:text-slate-200">{total}</span>
+            </div>
+            <div>
+              <span className="text-slate-400">进行中: </span>
+              <span className="font-semibold text-amber-600 dark:text-amber-400">{total - completed}</span>
+            </div>
+            <div>
+              <span className="text-slate-400">已完成: </span>
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">{completed}</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-slate-400">完成度</span>
             <div className="w-16 sm:w-20">
@@ -193,7 +221,7 @@ export function RightTopPanel({
 
       <Separator />
 
-      {/* 🚀 2. 下方：单行整体快捷创建表单（标题、优先级、截止日期、分类、创建按钮在一行紧凑排布） */}
+      {/* 🚀 2. 下方：单行整体快捷创建表单 */}
       <form onSubmit={handleQuickCreate} className="flex items-center gap-2 w-full">
         {/* 任务标题输入框 */}
         <div className="flex-1 min-w-0">
@@ -245,19 +273,21 @@ export function RightTopPanel({
           />
         </div>
 
-        {/* 分类选择 */}
+        {/* 分类选择（纯文本显示，不带文件夹图标，且显示中文名称） */}
         <Select
-          value={selectedCatId}
-          onValueChange={(val) => setSelectedCatId(val ?? "")}
+          value={selectedCatId || "NONE"}
+          onValueChange={(val) => setSelectedCatId(val === "NONE" ? "" : val ?? "")}
         >
-          <SelectTrigger className="h-8 w-28 text-xs bg-slate-100/60 dark:bg-slate-900/60 border-0 shrink-0">
-            <SelectValue placeholder="无分类" />
+          <SelectTrigger className="h-8 w-24 text-xs bg-slate-100/60 dark:bg-slate-900/60 border-0 shrink-0">
+            <SelectValue>
+              {selectedCatName}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="NONE">无分类</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat.id} value={cat.id}>
-                📁 {cat.name}
+                {cat.name}
               </SelectItem>
             ))}
           </SelectContent>
