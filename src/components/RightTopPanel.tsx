@@ -7,6 +7,7 @@ import { SortOrder, TodoItem, CategoryItem, Priority } from "@/types/todo";
 import { createTodo } from "@/app/actions/todoActions";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
@@ -101,6 +102,48 @@ export function RightTopPanel({
     LOW: "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700",
   };
 
+  // 按照不同完成度百分比，提供丰富的视觉提示与颜色区分（100% 呈现高亮翡翠绿）
+  const progressInfo = React.useMemo(() => {
+    if (total === 0) {
+      return {
+        label: "无任务",
+        textStyle: "text-slate-400 dark:text-slate-500",
+        badgeStyle: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+        indicatorStyle: "bg-slate-300 dark:bg-slate-700",
+      };
+    }
+    if (percent === 100) {
+      return {
+        label: "🎉 全部完成",
+        textStyle: "text-emerald-600 dark:text-emerald-400 font-bold",
+        badgeStyle: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 font-semibold",
+        indicatorStyle: "bg-emerald-500",
+      };
+    }
+    if (percent >= 50) {
+      return {
+        label: "进度过半",
+        textStyle: "text-blue-600 dark:text-blue-400 font-semibold",
+        badgeStyle: "bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300",
+        indicatorStyle: "bg-blue-500",
+      };
+    }
+    if (percent > 0) {
+      return {
+        label: "加油起步",
+        textStyle: "text-amber-600 dark:text-amber-400 font-semibold",
+        badgeStyle: "bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300",
+        indicatorStyle: "bg-amber-500",
+      };
+    }
+    return {
+      label: "尚未开始",
+      textStyle: "text-slate-500 dark:text-slate-400",
+      badgeStyle: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+      indicatorStyle: "bg-slate-400",
+    };
+  }, [percent, total]);
+
   return (
     <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-4 space-y-3 flex-shrink-0">
       {/* 📊 1. 最上方：与分类强关联的统计指标与 1-Click 排序 */}
@@ -123,10 +166,17 @@ export function RightTopPanel({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-slate-400">完成度</span>
-            <div className="w-20 sm:w-24">
-              <Progress value={percent} aria-label="任务完成度" />
+            <div className="w-16 sm:w-20">
+              <Progress
+                value={percent}
+                indicatorClassName={progressInfo.indicatorStyle}
+                aria-label="任务完成度"
+              />
             </div>
-            <span className="font-medium text-slate-600 dark:text-slate-400">{percent}%</span>
+            <span className={`tabular-nums ${progressInfo.textStyle}`}>{percent}%</span>
+            <Badge variant="secondary" className={`text-[10px] px-1.5 py-0.5 border-0 ${progressInfo.badgeStyle}`}>
+              {progressInfo.label}
+            </Badge>
           </div>
 
           <Button
