@@ -1,4 +1,4 @@
-# Docker Compose 简易部署配置
+# Docker Compose 部署配置 (连接外部已有 MySQL)
 services:
   todolist:
     build: .
@@ -9,11 +9,5 @@ services:
       - "80:8001"
     environment:
       - PORT=8001
-      - DATABASE_URL=file:/app/prisma/dev.db
-    # 持久化挂载 SQLite 数据库，避免容器重启丢失数据
-    volumes:
-      - todolist_data:/app/prisma
-
-# 定义本地持久化数据卷
-volumes:
-  todolist_data:
+      # 替换为你目标服务器上已有的 MySQL 连接信息
+      - DATABASE_URL=mysql://root:password@host.docker.internal:3306/todolist

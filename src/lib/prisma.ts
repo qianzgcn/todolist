@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { databaseUrl } from "@/lib/database-url";
 
 const globalForPrisma = globalThis as unknown as {
@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
+  const adapter = new PrismaMariaDb(databaseUrl);
 
   return new PrismaClient({
     adapter,
