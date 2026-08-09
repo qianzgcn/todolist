@@ -1,4 +1,6 @@
-export type Priority = "HIGH" | "MEDIUM" | "LOW";
+export const PRIORITIES = ["HIGH", "MEDIUM", "LOW"] as const;
+
+export type Priority = (typeof PRIORITIES)[number];
 
 export type StatusFilter = "ALL" | "ACTIVE" | "COMPLETED";
 
@@ -15,11 +17,16 @@ export interface TodoItem {
   title: string;
   completed: boolean;
   priority: Priority;
-  dueDate?: Date | string | null;
+  dueDate: string | null;
   categoryId?: string | null;
   category?: CategoryItem | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TodoData {
+  todos: TodoItem[];
+  categories: CategoryItem[];
 }
 
 export interface CreateTodoInput {
@@ -31,7 +38,6 @@ export interface CreateTodoInput {
 
 export interface UpdateTodoInput {
   title?: string;
-  completed?: boolean;
   priority?: Priority;
   dueDate?: string | null;
   categoryId?: string | null;

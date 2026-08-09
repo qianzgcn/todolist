@@ -6,16 +6,16 @@
     "dev": "next dev -p 8001",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "postinstall": "prisma generate",
+    "lint": "eslint",
+    "test": "tsx --test src/lib/todo-validation.test.ts",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@prisma/adapter-better-sqlite3": "^7.9.1",
     "@prisma/client": "^7.9.1",
-    "better-sqlite3": "^13.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
@@ -31,7 +31,6 @@
   "devDependencies": {
     "@prisma/config": "^7.9.1",
     "@tailwindcss/postcss": "^4",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",

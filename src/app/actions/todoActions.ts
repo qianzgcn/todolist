@@ -1,232 +1,120 @@
 "use server";
 
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { CreateTodoInput, UpdateTodoInput, StatusFilter, SortOrder, Priority } from "@/types/todo";
-import { revalidatePath } from "next/cache";
+import { toCategoryItem, toTodoItem } from "@/lib/todo-data";
+import {
+  readBoolean,
+  readDueDate,
+  readNullableId,
+  readPriority,
+  readRequiredId,
+  readRequiredText,
+} from "@/lib/todo-validation";
+import type {
+  CategoryItem,
+  CreateTodoInput,
+  TodoItem,
+  UpdateTodoInput,
+} from "@/types/todo";
 
-export async function getTodos(params?: {
-  status?: StatusFilter;
-  categoryId?: string;
-  search?: string;
-  sortOrder?: SortOrder;
-}) {
-  const { status = "ALL", categoryId, search, sortOrder = "asc" } = params || {};
-
-  const where: any = {};
-
-  if (status === "ACTIVE") {
-    where.completed = false;
-  } else if (status === "COMPLETED") {
-    where.completed = true;
+export async function createTodo(
+  input: CreateTodoInput,
+): Promise<TodoItem> {
+  if (!input || typeof input !== "object") {
+    throw new Error("任务数据无效");
   }
 
-  if (categoryId && categoryId !== "ALL") {
-    where.categoryId = categoryId;
-  }
-
-  if (search && search.trim() !== "") {
-    where.title = {
-      contains: search.trim(),
-    };
-  }
-
-  let orderBy: any = [{ completed: "asc" }, { createdAt: sortOrder }];
-
-  let todos = await prisma.todo.findMany({
-    where,
-    include: {
-      category: true,
-    },
-    orderBy,
-  });
-
-  return todos;
-}
-
-export async function getCategories() {
-  return await prisma.category.findMany({
-    orderBy: { name: "asc" },
-  });
-}
-
-export async function createTodo(input: CreateTodoInput) {
-  if (!input.title || input.title.trim() === "") {
-    throw new Error("任务标题不能为空");
-  }
+  const title = readRequiredText(input.title, "任务标题", 200);
+  const priority = readPriority(input.priority, "MEDIUM") ?? "MEDIUM";
+  const dueDate = readDueDate(input.dueDate) ?? null;
+  const categoryId = readNullableId(input.categoryId) ?? null;
 
   const todo = await prisma.todo.create({
     data: {
-      title: input.title.trim(),
-      priority: input.priority || "MEDIUM",
-      dueDate: input.dueDate ? new Date(input.dueDate) : null,
-      categoryId: input.categoryId || null,
+      title,
+      priority,
+      dueDate,
+      ...(categoryId
+        ? { category: { connect: { id: categoryId } } }
+        : {}),
     },
+    include: { category: true },
   });
 
-  revalidatePath("/");
-  return todo;
+  return toTodoItem(todo);
 }
 
-export async function toggleTodo(id: string, currentCompleted: boolean) {
+export async function toggleTodo(
+  id: string,
+  completed: boolean,
+): Promise<TodoItem> {
   const todo = await prisma.todo.update({
-    where: { id },
-    data: { completed: !currentCompleted },
+    where: { id: readRequiredId(id) },
+    data: { completed: readBoolean(completed) },
+    include: { category: true },
   });
 
-  revalidatePath("/");
-  return todo;
+  return toTodoItem(todo);
 }
 
-export async function updateTodo(id: string, input: UpdateTodoInput) {
-  const data: any = {};
-  if (input.title !== undefined) data.title = input.title.trim();
-  if (input.completed !== undefined) data.completed = input.completed;
-  if (input.priority !== undefined) data.priority = input.priority;
-  if (input.dueDate !== undefined) data.dueDate = input.dueDate ? new Date(input.dueDate) : null;
-  if (input.categoryId !== undefined) data.categoryId = input.categoryId;
+export async function updateTodo(
+  id: string,
+  input: UpdateTodoInput,
+): Promise<TodoItem> {
+  if (!input || typeof input !== "object") {
+    throw new Error("任务数据无效");
+  }
+
+  const data: Prisma.TodoUpdateInput = {};
+
+  if (input.title !== undefined) {
+    data.title = readRequiredText(input.title, "任务标题", 200);
+  }
+
+  const priority = readPriority(input.priority);
+  if (priority !== undefined) data.priority = priority;
+
+  const dueDate = readDueDate(input.dueDate);
+  if (dueDate !== undefined) data.dueDate = dueDate;
+
+  const categoryId = readNullableId(input.categoryId);
+  if (categoryId !== undefined) {
+    data.category = categoryId
+      ? { connect: { id: categoryId } }
+      : { disconnect: true };
+  }
+
+  if (Object.keys(data).length === 0) {
+    throw new Error("没有需要更新的内容");
+  }
 
   const todo = await prisma.todo.update({
-    where: { id },
+    where: { id: readRequiredId(id) },
     data,
+    include: { category: true },
   });
 
-  revalidatePath("/");
-  return todo;
+  return toTodoItem(todo);
 }
 
 export async function deleteTodo(id: string) {
   await prisma.todo.delete({
-    where: { id },
+    where: { id: readRequiredId(id) },
   });
-
-  revalidatePath("/");
 }
 
-export async function resetToSeedData() {
-  await prisma.todo.deleteMany();
-  await prisma.category.deleteMany();
-
-  const workCat = await prisma.category.create({
-    data: { name: "工作", color: "blue" },
-  });
-
-  const personalCat = await prisma.category.create({
-    data: { name: "个人", color: "emerald" },
-  });
-
-  const studyCat = await prisma.category.create({
-    data: { name: "学习", color: "purple" },
-  });
-
-  const lifeCat = await prisma.category.create({
-    data: { name: "生活", color: "amber" },
-  });
-
-  const now = new Date();
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const today = new Date(now);
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  const inThreeDays = new Date(now);
-  inThreeDays.setDate(now.getDate() + 3);
-  const inFiveDays = new Date(now);
-  inFiveDays.setDate(now.getDate() + 5);
-
-  await prisma.todo.createMany({
-    data: [
-      {
-        title: "完成 todoList 页面布局与 Prisma 7 架构升级",
-        completed: true,
-        priority: "HIGH",
-        categoryId: workCat.id,
-      },
-      {
-        title: "编写项目说明文档并同步至 GitHub 仓库",
-        completed: true,
-        priority: "HIGH",
-        categoryId: workCat.id,
-      },
-      {
-        title: "制定下周季度工作目标与 Key Results 规划",
-        completed: false,
-        priority: "HIGH",
-        dueDate: tomorrow,
-        categoryId: workCat.id,
-      },
-      {
-        title: "学习 React 19 并发特性与 Server Actions 原理",
-        completed: false,
-        priority: "HIGH",
-        dueDate: inThreeDays,
-        categoryId: studyCat.id,
-      },
-      {
-        title: "精读《深入理解 TypeScript》核心章节",
-        completed: false,
-        priority: "MEDIUM",
-        dueDate: inFiveDays,
-        categoryId: studyCat.id,
-      },
-      {
-        title: "每周 3 次 45 分钟有氧跑步锻炼",
-        completed: false,
-        priority: "MEDIUM",
-        categoryId: personalCat.id,
-      },
-      {
-        title: "睡前保持 30 分钟静心阅读与习惯打卡",
-        completed: true,
-        priority: "LOW",
-        categoryId: personalCat.id,
-      },
-      {
-        title: "整理本月家庭账单与财务支出复盘",
-        completed: false,
-        priority: "MEDIUM",
-        dueDate: yesterday,
-        categoryId: lifeCat.id,
-      },
-      {
-        title: "购买周末新鲜食材与日用品",
-        completed: false,
-        priority: "LOW",
-        dueDate: today,
-        categoryId: lifeCat.id,
-      },
-      {
-        title: "预约汽车保养与定期车况检查",
-        completed: false,
-        priority: "LOW",
-        dueDate: inFiveDays,
-        categoryId: lifeCat.id,
-      },
-    ],
-  });
-
-  revalidatePath("/");
-}
-
-export async function createCategory(name: string, color: string = "blue") {
-  const trimmed = name ? name.trim() : "";
-  if (!trimmed) {
-    throw new Error("分类名称不能为空");
-  }
-
+export async function createCategory(name: string): Promise<CategoryItem> {
+  const trimmed = readRequiredText(name, "分类名称", 50);
   const existing = await prisma.category.findUnique({
     where: { name: trimmed },
   });
-  if (existing) {
-    return existing;
-  }
 
-  const category = await prisma.category.create({
-    data: {
-      name: trimmed,
-      color,
-    },
-  });
+  if (existing) return toCategoryItem(existing);
 
-  revalidatePath("/");
-  return category;
+  return toCategoryItem(
+    await prisma.category.create({
+      data: { name: trimmed },
+    }),
+  );
 }

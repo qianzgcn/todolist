@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# todoList
 
-## Getting Started
+面向桌面浏览器的个人任务清单，使用 Next.js 16、React 19、Prisma 7、
+SQLite、Tailwind CSS 和 shadcn 组件构建。
 
-First, run the development server:
+## 本地运行
 
-```bash
+```powershell
+npm ci
+npm run db:migrate
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+打开 <http://localhost:8001>。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+数据库统一位于 `prisma/dev.db`。如需覆盖连接地址，可设置
+`DATABASE_URL`；Prisma CLI、应用运行时和 Seed 会读取同一个配置。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 常用命令
 
-## Learn More
+```powershell
+npm run test
+npm run lint
+npm run build
+npm run db:migrate
+npm run db:seed
+```
 
-To learn more about Next.js, take a look at the following resources:
+`db:seed` 会清空当前任务和分类并写入示例数据，请谨慎使用。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+SQLite 适合本机或单实例 Node.js 部署。需要多实例或 Serverless 部署时，
+应改用共享数据库。

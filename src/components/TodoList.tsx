@@ -7,34 +7,19 @@ import { Inbox } from "lucide-react";
 
 interface TodoListProps {
   todos: TodoType[];
-  isLoading: boolean;
   hasFilter: boolean;
-  onToggle: (id: string, currentCompleted: boolean) => void;
+  onToggle: (id: string, completed: boolean) => Promise<void>;
   onEdit: (todo: TodoType) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
 export function TodoList({
   todos,
-  isLoading,
   hasFilter,
   onToggle,
   onEdit,
   onDelete,
 }: TodoListProps) {
-  if (isLoading) {
-    return (
-      <div className="space-y-2 p-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="h-12 rounded-lg bg-slate-100 dark:bg-slate-800/50 animate-pulse"
-          />
-        ))}
-      </div>
-    );
-  }
-
   if (todos.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { format, parse, addDays, startOfWeek } from "date-fns"
+import { format, parse, addDays, startOfWeek, isValid } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { CalendarIcon } from "lucide-react"
 
@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface DatePickerProps {
+  id?: string
   value: string // yyyy-MM-dd format
   onChange: (value: string) => void
   placeholder?: string
@@ -18,6 +19,7 @@ interface DatePickerProps {
 }
 
 function DatePicker({
+  id,
   value,
   onChange,
   placeholder = "选择日期",
@@ -28,7 +30,8 @@ function DatePicker({
   const selectedDate = React.useMemo(() => {
     if (!value) return undefined
     try {
-      return parse(value, "yyyy-MM-dd", new Date())
+      const date = parse(value, "yyyy-MM-dd", new Date())
+      return isValid(date) ? date : undefined
     } catch {
       return undefined
     }
@@ -53,6 +56,7 @@ function DatePicker({
       <PopoverTrigger
         render={
           <Button
+            id={id}
             variant="outline"
             className={cn(
               "w-full justify-start text-left font-normal",

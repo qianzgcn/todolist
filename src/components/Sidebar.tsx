@@ -3,10 +3,8 @@
 import React, { useState } from "react";
 import {
   CheckSquare,
-  Plus,
   Sun,
   Moon,
-  RotateCcw,
   Folder,
   Inbox,
   CheckCircle2,
@@ -16,10 +14,15 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { StatusFilter, CategoryItem, TodoItem } from "@/types/todo";
-import { resetToSeedData, createCategory } from "@/app/actions/todoActions";
+import type {
+  CategoryItem,
+  StatusFilter,
+  TodoItem,
+} from "@/types/todo";
+import { createCategory } from "@/app/actions/todoActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface SidebarProps {
   search: string;
@@ -31,8 +34,8 @@ interface SidebarProps {
   categories: CategoryItem[];
   todos: TodoItem[];
   darkMode: boolean;
-  setDarkMode: (value: boolean | ((prev: boolean) => boolean)) => void;
-  onRefresh: () => void;
+  onToggleDarkMode: () => void;
+  onCategoryCreated: (category: CategoryItem) => void;
 }
 
 export function Sidebar({
@@ -45,37 +48,22 @@ export function Sidebar({
   categories,
   todos,
   darkMode,
-  setDarkMode,
-  onRefresh,
+  onToggleDarkMode,
+  onCategoryCreated,
 }: SidebarProps) {
-  const [isResetting, setIsResetting] = useState(false);
   const [isAddingCat, setIsAddingCat] = useState(false);
   const [newCatName, setNewCatName] = useState("");
-
-  const handleResetSeed = async () => {
-    if (confirm("确定重置为初始示例数据？")) {
-      try {
-        setIsResetting(true);
-        await resetToSeedData();
-        onRefresh();
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsResetting(false);
-      }
-    }
-  };
 
   const handleAddCategory = async () => {
     if (!newCatName.trim()) return;
     try {
-      const created = await createCategory(newCatName.trim());
+      const created = await createCategory(newCatName);
+      onCategoryCreated(created);
       setCategoryId(created.id);
       setNewCatName("");
       setIsAddingCat(false);
-      onRefresh();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("创建分类失败:", error);
     }
   };
 
@@ -84,7 +72,7 @@ export function Sidebar({
   const completedCount = todos.filter((t) => t.completed).length;
 
   return (
-    <aside className="w-full md:w-64 bg-slate-50 dark:bg-slate-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 flex flex-col h-full flex-shrink-0">
+    <aside className="flex h-full w-64 flex-shrink-0 flex-col border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
       {/* 头部 */}
       <div className="p-4 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-col gap-3">
         <div className="flex items-center gap-2">
@@ -96,8 +84,12 @@ export function Sidebar({
 
         {/* 侧边栏搜索框 */}
         <div className="relative w-full">
+          <Label htmlFor="todo-search" className="sr-only">
+            搜索任务
+          </Label>
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
           <Input
+            id="todo-search"
             type="text"
             placeholder="搜索任务..."
             value={search}
@@ -105,12 +97,16 @@ export function Sidebar({
             className="pl-8 pr-7 text-xs h-8 bg-white dark:bg-slate-950"
           />
           {search && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={() => setSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              aria-label="清除搜索"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -191,7 +187,11 @@ export function Sidebar({
 
           {isAddingCat && (
             <div className="flex items-center gap-1 px-2 py-1">
+              <Label htmlFor="new-sidebar-category" className="sr-only">
+                分类名称
+              </Label>
               <Input
+                id="new-sidebar-category"
                 type="text"
                 placeholder="分类名称..."
                 value={newCatName}
@@ -199,7 +199,12 @@ export function Sidebar({
                 onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
                 autoFocus
               />
-              <Button size="icon" className="h-8 w-8 flex-shrink-0" onClick={handleAddCategory}>
+              <Button
+                size="icon"
+                className="h-8 w-8 flex-shrink-0"
+                onClick={handleAddCategory}
+                aria-label="创建分类"
+              >
                 <Check className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -244,27 +249,15 @@ export function Sidebar({
       </div>
 
       {/* 底部控制 */}
-      <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+      <div className="border-t border-slate-200/80 p-3 text-xs text-slate-500 dark:border-slate-800/80 dark:text-slate-400">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setDarkMode((prev) => !prev)}
+          onClick={onToggleDarkMode}
           className="flex items-center gap-1.5 px-2"
         >
           {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
           <span>{darkMode ? "浅色模式" : "暗黑模式"}</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleResetSeed}
-          disabled={isResetting}
-          className="flex items-center gap-1 px-2"
-          title="重置示例数据"
-        >
-          <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? "animate-spin" : ""}`} />
-          <span>重置数据</span>
         </Button>
       </div>
     </aside>

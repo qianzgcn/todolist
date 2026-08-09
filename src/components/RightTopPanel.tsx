@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { ArrowDownUp, Plus, Tag, Flag } from "lucide-react";
 import { format } from "date-fns";
 import { SortOrder, TodoItem, CategoryItem, Priority } from "@/types/todo";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -23,7 +25,7 @@ interface RightTopPanelProps {
   sortOrder: SortOrder;
   setSortOrder: (sortOrder: SortOrder) => void;
   todos: TodoItem[];
-  onRefresh: () => void;
+  onTodoCreated: (todo: TodoItem) => void;
 }
 
 export function RightTopPanel({
@@ -32,7 +34,7 @@ export function RightTopPanel({
   sortOrder,
   setSortOrder,
   todos,
-  onRefresh,
+  onTodoCreated,
 }: RightTopPanelProps) {
   // 快速创建状态
   const [quickTitle, setQuickTitle] = useState("");
@@ -40,17 +42,10 @@ export function RightTopPanel({
   const [quickDueDate, setQuickDueDate] = useState<string>(
     format(new Date(), "yyyy-MM-dd")
   );
-  const [selectedCatId, setSelectedCatId] = useState<string>("");
+  const [selectedCatId, setSelectedCatId] = useState(
+    categoryId !== "ALL" ? categoryId : "",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // 当外部分类切换时，如果切换到了具体分类，自动同步极速创建的分类；如果在全部分类，默认未分类
-  useEffect(() => {
-    if (categoryId && categoryId !== "ALL") {
-      setSelectedCatId(categoryId);
-    } else {
-      setSelectedCatId("");
-    }
-  }, [categoryId]);
 
   const handleQuickCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,18 +56,18 @@ export function RightTopPanel({
       const targetCatId =
         selectedCatId && selectedCatId !== "NONE" ? selectedCatId : null;
 
-      await createTodo({
+      const todo = await createTodo({
         title: quickTitle.trim(),
         priority: quickPriority,
         dueDate: quickDueDate || null,
         categoryId: targetCatId,
       });
+      onTodoCreated(todo);
 
       setQuickTitle("");
       // 重置为默认：今天，默认中优先级，当前分类
       setQuickPriority("MEDIUM");
       setQuickDueDate(format(new Date(), "yyyy-MM-dd"));
-      onRefresh();
     } catch (err) {
       console.error("快捷创建任务失败:", err);
     } finally {
@@ -109,7 +104,7 @@ export function RightTopPanel({
   return (
     <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 p-4 space-y-3 flex-shrink-0">
       {/* 📊 1. 最上方：与分类强关联的统计指标与 1-Click 排序 */}
-      <div className="flex items-center justify-between gap-4 text-xs pb-1 border-b border-slate-100 dark:border-slate-900">
+      <div className="flex items-center justify-between gap-4 text-xs pb-1">
         <div className="flex items-center gap-4">
           <div>
             <span className="text-slate-400">总计: </span>
@@ -129,7 +124,7 @@ export function RightTopPanel({
           <div className="flex items-center gap-2">
             <span className="text-slate-400">完成度</span>
             <div className="w-20 sm:w-24">
-              <Progress value={percent} />
+              <Progress value={percent} aria-label="任务完成度" />
             </div>
             <span className="font-medium text-slate-600 dark:text-slate-400">{percent}%</span>
           </div>
@@ -151,10 +146,16 @@ export function RightTopPanel({
         </div>
       </div>
 
+      <Separator />
+
       {/* 🚀 2. 紧邻待办列表：高效率极速创建任务条 */}
       <form onSubmit={handleQuickCreate} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-0.5">
         <div className="relative flex-1 flex items-center">
+          <Label htmlFor="quick-todo-title" className="sr-only">
+            任务名称
+          </Label>
           <Input
+            id="quick-todo-title"
             type="text"
             placeholder="添加任务..."
             value={quickTitle}
@@ -167,7 +168,11 @@ export function RightTopPanel({
         <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
           {/* 日期快捷配置 */}
           <div className="w-36">
+            <Label htmlFor="quick-todo-date" className="sr-only">
+              截止日期
+            </Label>
             <DatePicker
+              id="quick-todo-date"
               value={quickDueDate}
               onChange={(val) => setQuickDueDate(val)}
               placeholder="今日完成"
@@ -180,7 +185,10 @@ export function RightTopPanel({
             value={quickPriority}
             onValueChange={(val) => setQuickPriority((val as Priority) || "MEDIUM")}
           >
-            <SelectTrigger className={`w-20 h-9 px-2.5 text-xs font-medium ${priorityColorMap[quickPriority]}`}>
+            <SelectTrigger
+              aria-label="优先级"
+              className={`w-20 h-9 px-2.5 text-xs font-medium ${priorityColorMap[quickPriority]}`}
+            >
               <SelectValue>
                 <span className="flex items-center gap-1">
                   <Flag className="w-3 h-3 flex-shrink-0" />
@@ -206,7 +214,7 @@ export function RightTopPanel({
             value={selectedCatId || "NONE"}
             onValueChange={(val) => setSelectedCatId(val ?? "")}
           >
-            <SelectTrigger className="w-28 h-9 text-xs">
+            <SelectTrigger aria-label="所属分类" className="w-28 h-9 text-xs">
               <SelectValue>
                 <span className="flex items-center gap-1 truncate">
                   <Tag className="w-3 h-3 text-slate-400 flex-shrink-0" />
